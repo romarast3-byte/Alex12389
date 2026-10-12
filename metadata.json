@@ -1,0 +1,6 @@
+{
+  "name": "Маша — 19 | Кинематографичное поздравление",
+  "description": "Эстетичный интерактивный кинематографичный проект-поздравление с 19-летием для Маши.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

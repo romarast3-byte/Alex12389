@@ -1,0 +1,3824 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Маша — 19 | Кинематографичное поздравление</title>
+  <meta name="description" content="Интерактивный кинематографичный проект-поздравление с 19-летием для Маши." />
+  <meta property="og:title" content="Маша — 19 | Кинематографичное поздравление" />
+  <meta property="og:description" content="Интерактивный кинематографичный проект-поздравление с 19-летием для Маши." />
+  <meta property="og:type" content="website" />
+  <meta name="twitter:card" content="summary_large_image" />
+
+  <!-- Google Fonts: Cormorant Garamond, Playfair Display & Montserrat -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,600&family=Montserrat:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,400;1,600&display=swap" rel="stylesheet" />
+
+  <!-- CDN: Canvas Confetti & Lucide Icons -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.4/dist/confetti.browser.min.js"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <style>
+    /* ==========================================================================
+       DESIGN TOKENS & RESET
+       Palette: Midnight Blue (#0B0E14), Warm Ivory (#FDFBF7),
+                Soft Peach (#FFB5A7), Champagne Gold (#E5C378)
+       ========================================================================== */
+    :root {
+      --bg-midnight: #0b0e14;
+      --bg-midnight-deep: #07090e;
+      --bg-midnight-surface: #121722;
+      --color-ivory: #fdfbf7;
+      --color-ivory-muted: rgba(253, 251, 247, 0.72);
+      --color-ivory-faint: rgba(253, 251, 247, 0.35);
+      --color-gold: #e5c378;
+      --color-gold-light: #f4d99b;
+      --color-gold-dim: rgba(229, 195, 120, 0.2);
+      --color-gold-border: rgba(229, 195, 120, 0.28);
+      --color-peach: #ffb5a7;
+      --color-peach-dim: rgba(255, 181, 167, 0.16);
+      --font-serif-display: "Playfair Display", Georgia, serif;
+      --font-serif-body: "Cormorant Garamond", Garamond, serif;
+      --font-sans: "Montserrat", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      --transition-cinematic: 700ms cubic-bezier(0.22, 1, 0.36, 1);
+      --transition-smooth: 350ms cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      height: 100dvh;
+      overflow: hidden;
+      background-color: var(--bg-midnight);
+      color: var(--color-ivory);
+      font-family: var(--font-sans);
+      font-size: 16px;
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      user-select: none;
+    }
+
+    /* Ambient noise & cinematic vignette */
+    .cinematic-vignette {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 5;
+      background: radial-gradient(circle at 50% 50%, transparent 40%, rgba(7, 9, 14, 0.75) 100%);
+      box-shadow: inset 0 0 100px rgba(7, 9, 14, 0.85);
+    }
+
+    /* Background particle canvas */
+    #ambient-canvas {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+      pointer-events: none;
+      opacity: 0.85;
+    }
+
+    /* Subtle warm ambient glows */
+    .ambient-glow-1 {
+      position: fixed;
+      top: -10vw;
+      right: -10vw;
+      width: 55vw;
+      height: 55vw;
+      max-width: 600px;
+      max-height: 600px;
+      background: radial-gradient(circle, rgba(229, 195, 120, 0.12) 0%, rgba(11, 14, 20, 0) 70%);
+      filter: blur(80px);
+      z-index: 2;
+      pointer-events: none;
+    }
+
+    .ambient-glow-2 {
+      position: fixed;
+      bottom: -15vw;
+      left: -10vw;
+      width: 60vw;
+      height: 60vw;
+      max-width: 650px;
+      max-height: 650px;
+      background: radial-gradient(circle, rgba(255, 181, 167, 0.08) 0%, rgba(11, 14, 20, 0) 70%);
+      filter: blur(90px);
+      z-index: 2;
+      pointer-events: none;
+    }
+
+    /* Main viewport container */
+    #app-container {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      z-index: 10;
+      overflow: hidden;
+    }
+
+    /* ==========================================================================
+       TOP BAR (Minimal Editorial Header)
+       ========================================================================== */
+    .top-bar {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 68px;
+      padding: 0 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      z-index: 30;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(253, 251, 247, 0.05);
+      background: linear-gradient(180deg, rgba(11, 14, 20, 0.8) 0%, rgba(11, 14, 20, 0) 100%);
+    }
+
+    .brand-mark {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 0.85rem;
+      font-weight: 500;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--color-gold);
+    }
+
+    .brand-mark span {
+      color: var(--color-ivory-muted);
+      font-weight: 400;
+      letter-spacing: 0.08em;
+    }
+
+    .timeline-progress {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .timeline-dot {
+      width: 28px;
+      height: 3px;
+      background: rgba(253, 251, 247, 0.16);
+      border-radius: 2px;
+      transition: all var(--transition-smooth);
+      cursor: pointer;
+      position: relative;
+    }
+
+    .timeline-dot.active {
+      background: var(--color-gold);
+      box-shadow: 0 0 10px rgba(229, 195, 120, 0.5);
+    }
+
+    .timeline-dot.passed {
+      background: rgba(229, 195, 120, 0.45);
+    }
+
+    .header-controls {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .icon-btn {
+      background: rgba(253, 251, 247, 0.04);
+      border: 1px solid rgba(253, 251, 247, 0.12);
+      color: var(--color-ivory-muted);
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all var(--transition-smooth);
+    }
+
+    .icon-btn:hover {
+      background: rgba(229, 195, 120, 0.15);
+      border-color: var(--color-gold-border);
+      color: var(--color-gold);
+      transform: translateY(-1px);
+    }
+
+    .icon-btn svg {
+      width: 17px;
+      height: 17px;
+    }
+
+    /* ==========================================================================
+       SCENES WRAPPER & SCENE SECTIONS
+       ========================================================================== */
+    .scenes-viewport {
+      flex: 1;
+      position: relative;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+    }
+
+    .scene {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 80px 24px 100px;
+      opacity: 0;
+      visibility: hidden;
+      transform: scale(0.97) translateY(24px);
+      filter: blur(8px);
+      transition: opacity var(--transition-cinematic), transform var(--transition-cinematic), filter var(--transition-cinematic), visibility var(--transition-cinematic);
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+    }
+
+    .scene::-webkit-scrollbar {
+      display: none;
+    }
+
+    .scene.active {
+      opacity: 1;
+      visibility: visible;
+      transform: scale(1) translateY(0);
+      filter: blur(0);
+      z-index: 20;
+    }
+
+    .scene.exit-prev {
+      opacity: 0;
+      transform: scale(1.03) translateY(-30px);
+      filter: blur(10px);
+    }
+
+    .scene-content {
+      width: 100%;
+      max-width: 820px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      margin: auto 0;
+    }
+
+    /* Typography & Hierarchy */
+    .chapter-eyebrow {
+      font-size: 0.78rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.28em;
+      color: var(--color-gold);
+      margin-bottom: 20px;
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .chapter-eyebrow::before,
+    .chapter-eyebrow::after {
+      content: "";
+      width: 24px;
+      height: 1px;
+      background: var(--color-gold-border);
+    }
+
+    .display-title {
+      font-family: var(--font-serif-display);
+      font-size: clamp(2.4rem, 6.5vw, 4.2rem);
+      line-height: 1.15;
+      font-weight: 600;
+      color: var(--color-ivory);
+      margin-bottom: 24px;
+      letter-spacing: -0.01em;
+      text-shadow: 0 4px 30px rgba(0, 0, 0, 0.4);
+    }
+
+    .display-title-gold {
+      background: linear-gradient(135deg, #fdfbf7 20%, #e5c378 70%, #ffb5a7 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      display: inline-block;
+    }
+
+    .lead-text {
+      font-family: var(--font-serif-body);
+      font-size: clamp(1.2rem, 3.2vw, 1.65rem);
+      font-weight: 400;
+      line-height: 1.65;
+      color: var(--color-ivory-muted);
+      max-width: 660px;
+      margin-bottom: 36px;
+    }
+
+    .sub-lead-sans {
+      font-size: 0.95rem;
+      font-weight: 300;
+      color: var(--color-ivory-muted);
+      max-width: 580px;
+      line-height: 1.8;
+      margin-bottom: 36px;
+    }
+
+    /* Interactive Buttons */
+    .btn-cinematic {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+      padding: 16px 36px;
+      font-family: var(--font-sans);
+      font-size: 0.88rem;
+      font-weight: 600;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--bg-midnight);
+      background: linear-gradient(135deg, #fbf0d3 0%, #e5c378 60%, #dfb55c 100%);
+      border: 1px solid rgba(255, 255, 255, 0.4);
+      border-radius: 4px;
+      cursor: pointer;
+      outline: none;
+      box-shadow: 0 8px 30px rgba(229, 195, 120, 0.25), inset 0 1px 1px rgba(255, 255, 255, 0.6);
+      transition: all var(--transition-smooth);
+    }
+
+    .btn-cinematic:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 38px rgba(229, 195, 120, 0.42), inset 0 1px 1px rgba(255, 255, 255, 0.8);
+      background: linear-gradient(135deg, #ffffff 0%, #ecd08c 60%, #e5c378 100%);
+    }
+
+    .btn-cinematic:active {
+      transform: translateY(0);
+      box-shadow: 0 4px 16px rgba(229, 195, 120, 0.25);
+    }
+
+    .btn-cinematic svg {
+      width: 18px;
+      height: 18px;
+      stroke-width: 2.2;
+    }
+
+    .btn-secondary {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 14px 28px;
+      font-size: 0.82rem;
+      font-weight: 500;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--color-ivory);
+      background: rgba(253, 251, 247, 0.04);
+      border: 1px solid var(--color-gold-border);
+      border-radius: 4px;
+      cursor: pointer;
+      backdrop-filter: blur(8px);
+      transition: all var(--transition-smooth);
+    }
+
+    .btn-secondary:hover {
+      background: rgba(229, 195, 120, 0.12);
+      border-color: var(--color-gold);
+      color: var(--color-gold-light);
+      transform: translateY(-1px);
+    }
+
+    .btn-ghost {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 18px;
+      font-size: 0.8rem;
+      font-weight: 500;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--color-ivory-faint);
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      transition: color var(--transition-smooth);
+    }
+
+    .btn-ghost:hover {
+      color: var(--color-gold);
+    }
+
+    /* ==========================================================================
+       SCENE 1: INTRO
+       ========================================================================== */
+    .intro-meta-badge {
+      font-size: 0.72rem;
+      letter-spacing: 0.25em;
+      color: var(--color-peach);
+      text-transform: uppercase;
+      margin-bottom: 18px;
+      opacity: 0.9;
+    }
+
+    .intro-decor-line {
+      width: 60px;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--color-gold), transparent);
+      margin: 24px auto 30px;
+    }
+
+    .intro-hint {
+      margin-top: 36px;
+      font-size: 0.75rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--color-ivory-faint);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .intro-hint svg {
+      width: 14px;
+      height: 14px;
+      color: var(--color-gold);
+    }
+
+    /* ==========================================================================
+       SCENE 2: BIRTHDAY REVEAL ("Маша, 19")
+       ========================================================================== */
+    .reveal-halo {
+      position: relative;
+      margin-bottom: 24px;
+    }
+
+    .reveal-halo::before {
+      content: "";
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 240px;
+      height: 240px;
+      background: radial-gradient(circle, rgba(229, 195, 120, 0.22) 0%, rgba(255, 181, 167, 0.1) 45%, transparent 70%);
+      border-radius: 50%;
+      filter: blur(28px);
+      pointer-events: none;
+      z-index: -1;
+      animation: pulseGlow 6s ease-in-out infinite alternate;
+    }
+
+    @keyframes pulseGlow {
+      0% { transform: translate(-50%, -50%) scale(0.9); opacity: 0.7; }
+      100% { transform: translate(-50%, -50%) scale(1.15); opacity: 1; }
+    }
+
+    .monumental-number {
+      font-family: var(--font-serif-display);
+      font-size: clamp(3.2rem, 11vw, 6.2rem);
+      line-height: 1.05;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: var(--color-ivory);
+    }
+
+    .monumental-number em {
+      font-style: italic;
+      font-weight: 400;
+      color: var(--color-gold);
+      padding-left: 6px;
+    }
+
+    .editorial-quote-box {
+      background: rgba(18, 23, 34, 0.55);
+      border: 1px solid rgba(229, 195, 120, 0.2);
+      border-radius: 4px;
+      padding: 32px 36px;
+      margin: 12px 0 32px;
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.35);
+      text-align: left;
+      position: relative;
+    }
+
+    .quote-mark {
+      font-family: var(--font-serif-display);
+      font-size: 2.8rem;
+      line-height: 1;
+      color: var(--color-gold);
+      opacity: 0.35;
+      margin-bottom: 4px;
+    }
+
+    .quote-body {
+      font-family: var(--font-serif-body);
+      font-size: clamp(1.15rem, 2.4vw, 1.35rem);
+      line-height: 1.65;
+      color: var(--color-ivory);
+      font-weight: 400;
+    }
+
+    .quote-author-row {
+      margin-top: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-top: 1px solid rgba(253, 251, 247, 0.08);
+      padding-top: 16px;
+      font-size: 0.78rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--color-peach);
+    }
+
+    .quote-author-row span:last-child {
+      color: var(--color-ivory-faint);
+    }
+
+    /* ==========================================================================
+       SCENES 3, 4, 5: ELEGANT EDITORIAL PLACEHOLDERS / CONTAINERS
+       ========================================================================== */
+    .editorial-card-container {
+      width: 100%;
+      background: rgba(18, 23, 34, 0.5);
+      border: 1px solid rgba(229, 195, 120, 0.2);
+      border-radius: 6px;
+      padding: 28px;
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.4);
+      margin-bottom: 28px;
+    }
+
+    /* Scene 3: Editorial Responsive Photo Gallery */
+    .memories-gallery-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 18px;
+      margin-top: 20px;
+      width: 100%;
+    }
+
+    @media (max-width: 768px) {
+      .memories-gallery-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+      }
+    }
+
+    @media (max-width: 440px) {
+      .memories-gallery-grid {
+        grid-template-columns: 1fr;
+        gap: 14px;
+      }
+    }
+
+    .memory-card {
+      position: relative;
+      aspect-ratio: 4 / 5;
+      background: #0d1118;
+      border: 1px solid rgba(229, 195, 120, 0.22);
+      border-radius: 6px;
+      overflow: hidden;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+      transition: all var(--transition-smooth);
+    }
+
+    .memory-card:hover {
+      border-color: var(--color-gold);
+      transform: translateY(-3px);
+      box-shadow: 0 16px 36px rgba(0, 0, 0, 0.6), 0 0 20px rgba(229, 195, 120, 0.15);
+    }
+
+    .memory-card-img {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .memory-card:hover .memory-card-img {
+      transform: scale(1.05);
+    }
+
+    .memory-card-overlay {
+      position: relative;
+      z-index: 2;
+      padding: 16px;
+      background: linear-gradient(180deg, rgba(7, 9, 14, 0) 0%, rgba(7, 9, 14, 0.88) 60%, rgba(7, 9, 14, 0.98) 100%);
+      text-align: left;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .memory-card-num {
+      font-size: 0.68rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--color-gold);
+      font-weight: 600;
+    }
+
+    .memory-card-title {
+      font-family: var(--font-serif-display);
+      font-size: 0.98rem;
+      font-weight: 600;
+      color: var(--color-ivory);
+      line-height: 1.25;
+    }
+
+    .memory-card-desc {
+      font-size: 0.72rem;
+      color: var(--color-ivory-faint);
+      line-height: 1.4;
+    }
+
+    /* Fallback frame when image is being loaded or locally selected */
+    .memory-card-fallback {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      background: #0a0e14;
+      text-align: center;
+      z-index: 1;
+    }
+
+    .memory-card-fallback svg {
+      width: 32px;
+      height: 32px;
+      color: var(--color-gold);
+      margin-bottom: 8px;
+      opacity: 0.85;
+    }
+
+    .fallback-frame-label {
+      font-size: 0.74rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--color-gold);
+      margin-top: 4px;
+    }
+
+    .fallback-frame-path {
+      font-size: 0.65rem;
+      color: var(--color-ivory-faint);
+      margin-top: 2px;
+      font-family: monospace;
+    }
+
+    .memory-card-preview-opt {
+      margin-top: 8px;
+      font-size: 0.64rem;
+      padding: 3px 8px;
+      color: var(--color-ivory-faint);
+      border: 1px solid rgba(253, 251, 247, 0.12);
+      border-radius: 4px;
+      background: rgba(253, 251, 247, 0.03);
+      cursor: pointer;
+      opacity: 0.6;
+      transition: all 200ms ease;
+    }
+
+    .memory-card-preview-opt:hover {
+      opacity: 1;
+      color: var(--color-gold);
+      border-color: rgba(229, 195, 120, 0.3);
+      background: rgba(229, 195, 120, 0.08);
+    }
+
+    /* Gallery Lightbox (Fullscreen Image Viewer) */
+    .gallery-lightbox {
+      position: fixed;
+      inset: 0;
+      z-index: 11000;
+      background: rgba(4, 6, 10, 0.95);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+      transition: opacity 350ms cubic-bezier(0.22, 1, 0.36, 1), visibility 350ms;
+    }
+
+    .gallery-lightbox.active {
+      opacity: 1;
+      visibility: visible;
+      pointer-events: auto;
+    }
+
+    .lightbox-top-bar {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 64px;
+      padding: 0 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid rgba(253, 251, 247, 0.08);
+      background: rgba(11, 14, 20, 0.7);
+      z-index: 10;
+    }
+
+    .lightbox-counter {
+      font-size: 0.8rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--color-gold);
+      font-weight: 600;
+    }
+
+    .lightbox-content {
+      position: relative;
+      max-width: 92vw;
+      max-height: 80vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .lightbox-image-wrap {
+      position: relative;
+      max-width: 850px;
+      max-height: 68vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .lightbox-img {
+      max-width: 100%;
+      max-height: 68vh;
+      object-fit: contain;
+      border-radius: 4px;
+      border: 1px solid rgba(229, 195, 120, 0.3);
+      box-shadow: 0 25px 70px rgba(0, 0, 0, 0.8);
+      transition: transform 300ms ease;
+    }
+
+    .lightbox-caption-panel {
+      margin-top: 16px;
+      text-align: center;
+      max-width: 580px;
+    }
+
+    .lightbox-title {
+      font-family: var(--font-serif-display);
+      font-size: clamp(1.2rem, 3vw, 1.55rem);
+      color: var(--color-ivory);
+      margin-bottom: 4px;
+    }
+
+    .lightbox-desc {
+      font-family: var(--font-serif-body);
+      font-size: clamp(1rem, 2.2vw, 1.2rem);
+      color: var(--color-ivory-muted);
+      line-height: 1.5;
+    }
+
+    .lightbox-nav-btn {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: rgba(18, 23, 34, 0.75);
+      border: 1px solid rgba(229, 195, 120, 0.3);
+      color: var(--color-ivory);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all var(--transition-smooth);
+      z-index: 15;
+    }
+
+    .lightbox-nav-btn:hover {
+      background: rgba(229, 195, 120, 0.2);
+      border-color: var(--color-gold);
+      color: var(--color-gold);
+      transform: translateY(-50%) scale(1.08);
+    }
+
+    .lightbox-btn-prev { left: 24px; }
+    .lightbox-btn-next { right: 24px; }
+
+    @media (max-width: 600px) {
+      .lightbox-nav-btn {
+        width: 38px;
+        height: 38px;
+      }
+      .lightbox-btn-prev { left: 8px; }
+      .lightbox-btn-next { right: 8px; }
+    }
+
+    /* Scene 4: Cinema Film Slideshow */
+    .cinema-player-frame {
+      width: 100%;
+      aspect-ratio: 16 / 10;
+      background: #06080c;
+      border: 1px solid rgba(229, 195, 120, 0.28);
+      border-radius: 6px;
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.7), inset 0 0 80px rgba(0, 0, 0, 0.85);
+      margin-top: 18px;
+    }
+
+    .slideshow-slide-wrap {
+      position: absolute;
+      inset: 14px 0;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #05070a;
+    }
+
+    .slideshow-slide-img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      transition: opacity 700ms cubic-bezier(0.22, 1, 0.36, 1), transform 5000ms ease-out;
+      transform: scale(1.02);
+    }
+
+    .slideshow-slide-img.fading {
+      opacity: 0;
+      transform: scale(1.06);
+    }
+
+    .slideshow-vignette {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      box-shadow: inset 0 0 50px rgba(7, 9, 14, 0.75);
+    }
+
+    .slideshow-info-bar {
+      position: absolute;
+      bottom: 22px;
+      left: 18px;
+      right: 18px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 16px;
+      background: rgba(11, 14, 20, 0.85);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(229, 195, 120, 0.22);
+      border-radius: 6px;
+      z-index: 6;
+    }
+
+    .slideshow-meta {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-align: left;
+    }
+
+    .slideshow-counter {
+      font-size: 0.72rem;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--color-gold);
+      font-weight: 600;
+    }
+
+    .slideshow-title {
+      font-family: var(--font-serif-display);
+      font-size: 0.95rem;
+      color: var(--color-ivory);
+      font-weight: 500;
+    }
+
+    .slideshow-controls {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .slideshow-ctrl-btn {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: rgba(253, 251, 247, 0.08);
+      border: 1px solid rgba(229, 195, 120, 0.25);
+      color: var(--color-ivory);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 200ms ease;
+    }
+
+    .slideshow-ctrl-btn:hover {
+      background: rgba(229, 195, 120, 0.2);
+      border-color: var(--color-gold);
+      color: var(--color-gold);
+      transform: scale(1.06);
+    }
+
+    .slideshow-ctrl-btn svg {
+      width: 15px;
+      height: 15px;
+    }
+
+    .slideshow-play-btn {
+      background: rgba(229, 195, 120, 0.2);
+      border-color: var(--color-gold);
+      color: var(--color-gold);
+    }
+
+    /* Testing edit mode & Scene hiding */
+    .edit-only-control {
+      display: none !important;
+    }
+
+    body.edit-mode .edit-only-control {
+      display: inline-flex !important;
+    }
+
+    .scene.scene-hidden {
+      display: none !important;
+    }
+
+    /* Scene 5: Wishes & Gift Reveal Box */
+    .wishes-letter-card {
+      text-align: left;
+      padding: 32px;
+      background: rgba(18, 23, 34, 0.6);
+      border: 1px solid rgba(229, 195, 120, 0.22);
+      border-radius: 6px;
+      position: relative;
+      margin-bottom: 24px;
+    }
+
+    .wishes-salutation {
+      font-family: var(--font-serif-display);
+      font-size: 1.45rem;
+      color: var(--color-gold);
+      margin-bottom: 16px;
+    }
+
+    .wishes-paragraph {
+      font-family: var(--font-serif-body);
+      font-size: 1.25rem;
+      line-height: 1.7;
+      color: var(--color-ivory-muted);
+      margin-bottom: 16px;
+    }
+
+    .gift-reveal-box {
+      border: 1px dashed rgba(229, 195, 120, 0.35);
+      border-radius: 6px;
+      padding: 24px;
+      background: rgba(229, 195, 120, 0.03);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      text-align: left;
+      cursor: pointer;
+      transition: all var(--transition-smooth);
+    }
+
+    .gift-reveal-box:hover {
+      background: rgba(229, 195, 120, 0.08);
+      border-color: var(--color-gold);
+    }
+
+    .gift-icon-wrap {
+      width: 52px;
+      height: 52px;
+      border-radius: 8px;
+      background: rgba(229, 195, 120, 0.12);
+      border: 1px solid var(--color-gold-border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--color-gold);
+      flex-shrink: 0;
+    }
+
+    /* ==========================================================================
+       INTERACTIVE GIFT UNBOXING MODAL & 3D GIFT BOX
+       ========================================================================== */
+    .gift-modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(5, 7, 12, 0.94);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      z-index: 9500;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+      transition: opacity 400ms cubic-bezier(0.22, 1, 0.36, 1), visibility 400ms;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .gift-modal-backdrop.open {
+      opacity: 1;
+      visibility: visible;
+      pointer-events: auto;
+    }
+
+    .gift-modal-dialog {
+      width: 100%;
+      max-width: 660px;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin: auto;
+    }
+
+    /* Gift Stage: Wobbling Gift Box */
+    .gift-box-stage {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      position: relative;
+      cursor: pointer;
+      user-select: none;
+      transition: all 500ms ease;
+    }
+
+    .gift-box-stage.hidden-stage {
+      display: none;
+    }
+
+    .gift-glow-halo {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 290px;
+      height: 290px;
+      background: radial-gradient(circle, rgba(229, 195, 120, 0.32) 0%, rgba(255, 181, 167, 0.16) 45%, transparent 70%);
+      border-radius: 50%;
+      filter: blur(35px);
+      pointer-events: none;
+      animation: giftPulse 3s ease-in-out infinite alternate;
+    }
+
+    @keyframes giftPulse {
+      0% { transform: translate(-50%, -50%) scale(0.9); opacity: 0.6; }
+      100% { transform: translate(-50%, -50%) scale(1.18); opacity: 0.95; }
+    }
+
+    .gift-box-container {
+      position: relative;
+      width: 180px;
+      height: 190px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      animation: giftWobble 2.8s ease-in-out infinite;
+      transform-origin: bottom center;
+      transition: transform 600ms cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .gift-box-container:hover {
+      animation-play-state: paused;
+      transform: scale(1.05);
+    }
+
+    @keyframes giftWobble {
+      0%, 100% { transform: rotate(0deg) translateY(0); }
+      15% { transform: rotate(-4deg) translateY(-4px); }
+      30% { transform: rotate(4deg) translateY(-2px); }
+      45% { transform: rotate(-2.5deg) translateY(-3px); }
+      60% { transform: rotate(2deg) translateY(-1px); }
+      75% { transform: rotate(-1deg) translateY(0); }
+    }
+
+    /* 3D-styled Box Lid */
+    .gift-lid-wrap {
+      position: relative;
+      width: 196px;
+      height: 48px;
+      background: linear-gradient(135deg, #1e2535 0%, #111520 70%, #0d1018 100%);
+      border: 1px solid rgba(229, 195, 120, 0.5);
+      border-radius: 6px;
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.6), inset 0 1px 1px rgba(255, 255, 255, 0.2);
+      z-index: 5;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 650ms cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    /* Golden satin ribbon on lid */
+    .gift-lid-ribbon {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 32px;
+      background: linear-gradient(180deg, #fff3cf 0%, #e5c378 40%, #c49d44 100%);
+      box-shadow: 0 0 12px rgba(229, 195, 120, 0.5), inset 0 0 4px rgba(255, 255, 255, 0.6);
+      left: calc(50% - 16px);
+    }
+
+    /* Ornate bow on top of lid */
+    .gift-bow-assembly {
+      position: absolute;
+      top: -30px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 80px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+    }
+
+    .bow-loop-left, .bow-loop-right {
+      width: 34px;
+      height: 24px;
+      border: 3px solid #e5c378;
+      background: radial-gradient(circle, rgba(229, 195, 120, 0.4), rgba(184, 147, 69, 0.7));
+      border-radius: 50% 50% 10% 50%;
+      box-shadow: 0 0 14px rgba(229, 195, 120, 0.5);
+    }
+
+    .bow-loop-left {
+      transform: rotate(-28deg);
+      margin-right: -6px;
+    }
+
+    .bow-loop-right {
+      transform: rotate(28deg) scaleX(-1);
+      margin-left: -6px;
+    }
+
+    .bow-knot-center {
+      position: absolute;
+      width: 18px;
+      height: 18px;
+      background: linear-gradient(135deg, #fff1ce 0%, #e5c378 50%, #b38b32 100%);
+      border: 1px solid rgba(255, 255, 255, 0.5);
+      border-radius: 50%;
+      box-shadow: 0 0 10px rgba(229, 195, 120, 0.7);
+      z-index: 6;
+    }
+
+    /* Box Base */
+    .gift-base-wrap {
+      position: relative;
+      width: 180px;
+      height: 135px;
+      margin-top: -4px;
+      background: linear-gradient(180deg, #161c29 0%, #0d111a 100%);
+      border: 1px solid rgba(229, 195, 120, 0.4);
+      border-top: none;
+      border-radius: 0 0 6px 6px;
+      box-shadow: 0 25px 50px rgba(0, 0, 0, 0.75), inset 0 0 30px rgba(0, 0, 0, 0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 650ms cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .gift-base-ribbon-v {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 32px;
+      background: linear-gradient(180deg, #fce09b 0%, #e5c378 40%, #b89345 100%);
+      box-shadow: 0 0 12px rgba(229, 195, 120, 0.4);
+      left: calc(50% - 16px);
+    }
+
+    .gift-base-ribbon-h {
+      position: absolute;
+      left: 0;
+      right: 0;
+      height: 24px;
+      background: linear-gradient(90deg, #c49d44 0%, #e5c378 50%, #c49d44 100%);
+      box-shadow: 0 0 12px rgba(229, 195, 120, 0.4);
+      top: calc(50% - 12px);
+    }
+
+    /* Unboxing Animation Triggered State */
+    .gift-box-container.opening .gift-lid-wrap {
+      transform: translateY(-90px) rotate(-22deg) scale(1.08);
+      opacity: 0;
+    }
+
+    .gift-box-container.opening .gift-base-wrap {
+      transform: translateY(35px) scale(0.9);
+      opacity: 0;
+    }
+
+    .gift-click-invite {
+      margin-top: 32px;
+      font-size: 0.88rem;
+      font-weight: 500;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--color-gold);
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      background: rgba(229, 195, 120, 0.08);
+      border: 1px solid var(--color-gold-border);
+      border-radius: 30px;
+      padding: 10px 24px;
+      box-shadow: 0 0 20px rgba(229, 195, 120, 0.2);
+      animation: invitePulse 2s ease-in-out infinite;
+    }
+
+    @keyframes invitePulse {
+      0%, 100% { opacity: 0.85; transform: scale(1); }
+      50% { opacity: 1; transform: scale(1.04); }
+    }
+
+    /* Animated Greeting Card (Unboxed state) */
+    .unboxed-card-container {
+      width: 100%;
+      background: linear-gradient(135deg, rgba(18, 23, 34, 0.96) 0%, rgba(13, 16, 25, 0.96) 100%);
+      border: 1px solid var(--color-gold-border);
+      border-radius: 8px;
+      padding: 40px 36px;
+      box-shadow: 0 30px 80px rgba(0, 0, 0, 0.85), inset 0 1px 1px rgba(255, 255, 255, 0.15);
+      position: relative;
+      opacity: 0;
+      transform: translateY(30px) scale(0.95);
+      transition: all 750ms cubic-bezier(0.22, 1, 0.36, 1);
+      display: none;
+      text-align: left;
+    }
+
+    .unboxed-card-container.visible {
+      display: block;
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+
+    .unboxed-card-container.hugged {
+      box-shadow: 0 0 60px rgba(229, 195, 120, 0.5), 0 0 100px rgba(255, 181, 167, 0.35), 0 30px 80px rgba(0, 0, 0, 0.85);
+      border-color: var(--color-gold);
+      animation: hugHeartbeat 2.2s ease-in-out infinite;
+    }
+
+    @keyframes hugHeartbeat {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.015); }
+    }
+
+    .card-top-eyebrow {
+      font-size: 0.74rem;
+      font-weight: 600;
+      letter-spacing: 0.24em;
+      text-transform: uppercase;
+      color: var(--color-peach);
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .card-main-title {
+      font-family: var(--font-serif-display);
+      font-size: clamp(1.8rem, 4.5vw, 2.5rem);
+      line-height: 1.2;
+      color: var(--color-ivory);
+      margin-bottom: 6px;
+    }
+
+    .card-subtitle-gold {
+      font-family: var(--font-serif-body);
+      font-size: clamp(1.3rem, 3.2vw, 1.6rem);
+      color: var(--color-gold);
+      font-style: italic;
+      margin-bottom: 24px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid rgba(229, 195, 120, 0.2);
+    }
+
+    .card-body-paragraph {
+      font-family: var(--font-serif-body);
+      font-size: clamp(1.15rem, 2.4vw, 1.35rem);
+      line-height: 1.7;
+      color: var(--color-ivory-muted);
+      margin-bottom: 16px;
+    }
+
+    .card-body-paragraph strong {
+      color: var(--color-ivory);
+      font-weight: 600;
+    }
+
+    .card-final-toast {
+      font-family: var(--font-serif-display);
+      font-size: clamp(1.2rem, 2.6vw, 1.45rem);
+      color: var(--color-gold-light);
+      font-weight: 600;
+      margin-top: 24px;
+      padding-top: 20px;
+      border-top: 1px solid rgba(253, 251, 247, 0.08);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    /* Card Action Buttons */
+    .card-actions-row {
+      display: flex;
+      gap: 14px;
+      flex-wrap: wrap;
+      align-items: center;
+      margin-top: 32px;
+      padding-top: 20px;
+      border-top: 1px solid rgba(253, 251, 247, 0.08);
+    }
+
+    .btn-hug-gift {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 15px 30px;
+      font-size: 0.86rem;
+      font-weight: 600;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: #0b0e14;
+      background: linear-gradient(135deg, #ffd1c7 0%, #ffb5a7 50%, #e5c378 100%);
+      border: 1px solid rgba(255, 255, 255, 0.4);
+      border-radius: 4px;
+      cursor: pointer;
+      box-shadow: 0 8px 30px rgba(255, 181, 167, 0.35);
+      transition: all var(--transition-smooth);
+    }
+
+    .btn-hug-gift:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 38px rgba(255, 181, 167, 0.55);
+      background: linear-gradient(135deg, #ffffff 0%, #ffd1c7 50%, #f4d99b 100%);
+    }
+
+    .btn-hug-gift svg {
+      width: 18px;
+      height: 18px;
+      fill: currentColor;
+    }
+
+    /* Floating Hearts Canvas / Container */
+    .hearts-burst-container {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      overflow: visible;
+      z-index: 10;
+    }
+
+    .floating-heart {
+      position: absolute;
+      font-size: 24px;
+      pointer-events: none;
+      animation: floatHeartUp 2.4s ease-out forwards;
+      filter: drop-shadow(0 0 10px rgba(255, 181, 167, 0.8));
+    }
+
+    @keyframes floatHeartUp {
+      0% {
+        opacity: 0;
+        transform: translate(0, 0) scale(0.4) rotate(0deg);
+      }
+      20% {
+        opacity: 1;
+        transform: translate(var(--dx), -40px) scale(1.15) rotate(var(--rot));
+      }
+      80% {
+        opacity: 0.9;
+        transform: translate(calc(var(--dx) * 1.8), -180px) scale(1) rotate(calc(var(--rot) * 1.5));
+      }
+      100% {
+        opacity: 0;
+        transform: translate(calc(var(--dx) * 2.2), -260px) scale(0.7) rotate(calc(var(--rot) * 2));
+      }
+    }
+
+    /* Modal Close Header Button */
+    .gift-modal-close-btn {
+      position: absolute;
+      top: -16px;
+      right: 0;
+      background: rgba(253, 251, 247, 0.06);
+      border: 1px solid rgba(253, 251, 247, 0.15);
+      color: var(--color-ivory-muted);
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all var(--transition-smooth);
+      z-index: 20;
+    }
+
+    .gift-modal-close-btn:hover {
+      background: rgba(229, 195, 120, 0.15);
+      border-color: var(--color-gold);
+      color: var(--color-gold);
+      transform: translateY(-1px);
+    }
+
+    /* ==========================================================================
+       BOTTOM NAVIGATION DOCK
+       ========================================================================== */
+    .bottom-dock {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 76px;
+      padding: 0 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      z-index: 30;
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border-top: 1px solid rgba(253, 251, 247, 0.06);
+      background: linear-gradient(0deg, rgba(11, 14, 20, 0.92) 0%, rgba(11, 14, 20, 0) 100%);
+    }
+
+    .dock-left, .dock-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .chapter-tag {
+      font-size: 0.74rem;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--color-ivory-faint);
+    }
+
+    .chapter-tag strong {
+      color: var(--color-gold);
+      font-weight: 600;
+    }
+
+    /* Keyboard shortcut tooltip */
+    .shortcut-legend {
+      display: none;
+      font-size: 0.7rem;
+      color: var(--color-ivory-faint);
+      letter-spacing: 0.1em;
+    }
+
+    @media (min-width: 768px) {
+      .shortcut-legend {
+        display: block;
+      }
+    }
+
+    /* ==========================================================================
+       MODAL: CHAPTERS SWITCHER
+       ========================================================================== */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(7, 9, 14, 0.85);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      opacity: 0;
+      visibility: hidden;
+      transition: all var(--transition-smooth);
+    }
+
+    .modal-backdrop.open {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .modal-dialog {
+      width: 100%;
+      max-width: 480px;
+      background: var(--bg-midnight-surface);
+      border: 1px solid var(--color-gold-border);
+      border-radius: 8px;
+      padding: 28px;
+      box-shadow: 0 30px 80px rgba(0, 0, 0, 0.7);
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      padding-bottom: 14px;
+      border-bottom: 1px solid rgba(253, 251, 247, 0.08);
+    }
+
+    .modal-title {
+      font-family: var(--font-serif-display);
+      font-size: 1.25rem;
+      color: var(--color-ivory);
+    }
+
+    .chapters-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .chapter-row-btn {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+      padding: 14px 18px;
+      background: rgba(253, 251, 247, 0.03);
+      border: 1px solid rgba(253, 251, 247, 0.08);
+      border-radius: 4px;
+      color: var(--color-ivory);
+      cursor: pointer;
+      text-align: left;
+      transition: all var(--transition-smooth);
+    }
+
+    .chapter-row-btn:hover {
+      background: rgba(229, 195, 120, 0.1);
+      border-color: var(--color-gold-border);
+      color: var(--color-gold-light);
+    }
+
+    .chapter-row-btn.active {
+      border-color: var(--color-gold);
+      background: rgba(229, 195, 120, 0.15);
+      color: var(--color-gold);
+    }
+
+    /* ==========================================================================
+       CLASSIFIED DOSSIER & INVESTIGATION SCENE
+       ========================================================================== */
+    .classified-teaser-wrap {
+      width: 100%;
+      margin-top: 36px;
+      padding-top: 28px;
+      border-top: 1px dashed rgba(229, 195, 120, 0.2);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .btn-classified-dossier {
+      position: relative;
+      width: 100%;
+      max-width: 620px;
+      background: linear-gradient(135deg, #131720 0%, #0d1017 60%, #161214 100%);
+      border: 1px solid rgba(255, 99, 71, 0.4);
+      border-radius: 6px;
+      padding: 20px 24px;
+      cursor: pointer;
+      overflow: hidden;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), inset 0 0 20px rgba(255, 99, 71, 0.05);
+      transition: all var(--transition-smooth);
+      text-align: left;
+      outline: none;
+    }
+
+    .btn-classified-dossier:hover {
+      border-color: rgba(255, 99, 71, 0.85);
+      transform: translateY(-2px);
+      box-shadow: 0 16px 45px rgba(255, 99, 71, 0.25), inset 0 0 30px rgba(255, 99, 71, 0.12);
+    }
+
+    .btn-classified-dossier::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 4px;
+      height: 100%;
+      background: linear-gradient(180deg, #ff4d4d, #e5c378);
+    }
+
+    .classified-top-stamp {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: #ff6b6b;
+      margin-bottom: 10px;
+    }
+
+    .stamp-hazard-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #ff4d4d;
+      box-shadow: 0 0 10px #ff4d4d;
+      animation: hazardBlink 1.4s infinite;
+    }
+
+    @keyframes hazardBlink {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.3; transform: scale(0.85); }
+    }
+
+    .classified-main-title {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-family: var(--font-serif-display);
+      font-size: clamp(1.05rem, 2.5vw, 1.25rem);
+      font-weight: 600;
+      color: var(--color-ivory);
+      line-height: 1.35;
+      margin-bottom: 10px;
+    }
+
+    .classified-lock-icon {
+      color: #ff6b6b;
+      flex-shrink: 0;
+      width: 22px;
+      height: 22px;
+    }
+
+    .classified-bottom-meta {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 0.72rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--color-ivory-faint);
+      border-top: 1px solid rgba(253, 251, 247, 0.08);
+      padding-top: 10px;
+    }
+
+    /* Fullscreen Investigation Screen Overlay */
+    .classified-overlay {
+      position: fixed;
+      inset: 0;
+      background: #030508;
+      z-index: 10000;
+      display: flex;
+      flex-direction: column;
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+      transition: opacity 800ms cubic-bezier(0.22, 1, 0.36, 1), visibility 800ms;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .classified-overlay.active {
+      opacity: 1;
+      visibility: visible;
+      pointer-events: auto;
+    }
+
+    /* CRT Scanlines and CRT flicker */
+    .crt-scanlines {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.35) 50%),
+                  linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.03));
+      background-size: 100% 3px, 6px 100%;
+      z-index: 10005;
+      opacity: 0.75;
+    }
+
+    .crt-vignette {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background: radial-gradient(circle at center, transparent 55%, rgba(0, 0, 0, 0.88) 100%);
+      z-index: 10006;
+    }
+
+    .classified-container {
+      width: 100%;
+      max-width: 760px;
+      margin: 0 auto;
+      padding: 40px 24px 80px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      position: relative;
+      z-index: 10010;
+      min-height: 100%;
+    }
+
+    .classified-top-nav {
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 24px;
+      border-bottom: 1px solid rgba(255, 99, 71, 0.25);
+      margin-bottom: 36px;
+    }
+
+    .classified-header-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 0.74rem;
+      font-weight: 700;
+      letter-spacing: 0.2em;
+      color: #ff6b6b;
+      text-transform: uppercase;
+    }
+
+    .investigation-title-badge {
+      font-family: monospace, monospace;
+      font-size: clamp(0.95rem, 3vw, 1.35rem);
+      font-weight: 700;
+      letter-spacing: 0.16em;
+      color: #00ffaa;
+      background: rgba(0, 255, 170, 0.08);
+      border: 1px solid rgba(0, 255, 170, 0.4);
+      border-radius: 4px;
+      padding: 10px 20px;
+      text-transform: uppercase;
+      box-shadow: 0 0 20px rgba(0, 255, 170, 0.15);
+      margin-bottom: 40px;
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .investigation-title-badge::before {
+      content: "";
+      width: 8px;
+      height: 8px;
+      background: #00ffaa;
+      border-radius: 50%;
+      box-shadow: 0 0 10px #00ffaa;
+    }
+
+    /* Typewriter terminal section */
+    .typewriter-stage {
+      width: 100%;
+      background: rgba(10, 14, 20, 0.85);
+      border: 1px solid rgba(255, 99, 71, 0.35);
+      border-radius: 6px;
+      padding: 32px 28px;
+      margin-bottom: 36px;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
+      text-align: left;
+    }
+
+    .typewriter-line {
+      font-family: var(--font-serif-display);
+      font-size: clamp(1.2rem, 3.2vw, 1.65rem);
+      line-height: 1.6;
+      color: var(--color-ivory);
+      margin-bottom: 22px;
+      min-height: 1.6em;
+      opacity: 0;
+      transition: opacity 400ms ease;
+    }
+
+    .typewriter-line.visible {
+      opacity: 1;
+    }
+
+    .typewriter-line.shock {
+      color: #ff6b6b;
+      font-weight: 700;
+      text-shadow: 0 0 25px rgba(255, 77, 77, 0.5);
+    }
+
+    .cursor-blink {
+      display: inline-block;
+      width: 3px;
+      height: 1.15em;
+      background: #00ffaa;
+      margin-left: 4px;
+      vertical-align: middle;
+      animation: blink 0.8s infinite;
+    }
+
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0; }
+    }
+
+    /* Evidence Dossier Folder Card */
+    .evidence-folder-card {
+      width: 100%;
+      background: #0e121a;
+      border: 1px solid rgba(229, 195, 120, 0.4);
+      border-radius: 6px;
+      padding: 24px;
+      box-shadow: 0 30px 80px rgba(0, 0, 0, 0.7);
+      margin-bottom: 36px;
+      opacity: 0;
+      transform: translateY(24px) scale(0.97);
+      transition: all 800ms cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .evidence-folder-card.revealed {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+
+    .evidence-header-stamp {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid rgba(253, 251, 247, 0.1);
+      padding-bottom: 14px;
+      margin-bottom: 20px;
+    }
+
+    .evidence-red-stamp {
+      font-family: monospace, monospace;
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: #ff4d4d;
+      border: 2px solid #ff4d4d;
+      padding: 4px 10px;
+      border-radius: 2px;
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      transform: rotate(-2deg);
+      box-shadow: 0 0 15px rgba(255, 77, 77, 0.25);
+    }
+
+    .evidence-photo-container {
+      position: relative;
+      width: 100%;
+      background: #07090e;
+      border: 2px solid rgba(255, 255, 255, 0.08);
+      border-radius: 4px;
+      overflow: hidden;
+      box-shadow: 0 15px 40px rgba(0, 0, 0, 0.6);
+      margin-bottom: 24px;
+    }
+
+    .evidence-image {
+      width: 100%;
+      height: auto;
+      max-height: 70vh;
+      object-fit: contain;
+      display: block;
+      background: #07090e;
+    }
+
+    .evidence-caption-box {
+      font-family: var(--font-serif-display);
+      font-size: clamp(1.2rem, 3.2vw, 1.7rem);
+      line-height: 1.6;
+      color: var(--color-ivory);
+      text-align: center;
+      margin-top: 14px;
+      padding: 20px;
+      background: rgba(18, 23, 34, 0.65);
+      border: 1px solid rgba(229, 195, 120, 0.25);
+      border-radius: 4px;
+      opacity: 0;
+      transform: translateY(14px);
+      transition: all 700ms ease;
+    }
+
+    .evidence-caption-box.revealed {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .evidence-caption-box em {
+      color: var(--color-gold);
+      font-style: normal;
+      font-weight: 600;
+    }
+
+    .evidence-fallback-upload {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      margin-top: 12px;
+      font-size: 0.75rem;
+      letter-spacing: 0.1em;
+      color: var(--color-ivory-faint);
+      background: rgba(253, 251, 247, 0.05);
+      border: 1px dashed rgba(253, 251, 247, 0.2);
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 250ms ease;
+    }
+
+    .evidence-fallback-upload:hover {
+      background: rgba(229, 195, 120, 0.12);
+      color: var(--color-gold);
+      border-color: var(--color-gold-border);
+    }
+
+    .investigation-actions {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-top: 16px;
+      width: 100%;
+    }
+
+    /* Screen Glitch flicker keyframe */
+    @keyframes screenGlitch {
+      0% { transform: translate(0, 0); }
+      20% { transform: translate(-3px, 2px); filter: hue-rotate(90deg); }
+      40% { transform: translate(3px, -2px); filter: contrast(150%); }
+      60% { transform: translate(-2px, 1px); }
+      80% { transform: translate(2px, -1px); }
+      100% { transform: translate(0, 0); }
+    }
+
+    .glitching {
+      animation: screenGlitch 0.25s 3;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+      }
+      .scene, .classified-overlay, .evidence-folder-card {
+        filter: none !important;
+        transform: none !important;
+      }
+      #ambient-canvas, .crt-scanlines {
+        display: none !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Background Ambience & Canvas -->
+  <div class="cinematic-vignette" aria-hidden="true"></div>
+  <div class="ambient-glow-1" aria-hidden="true"></div>
+  <div class="ambient-glow-2" aria-hidden="true"></div>
+  <canvas id="ambient-canvas" aria-hidden="true"></canvas>
+
+  <div id="app-container">
+
+    <!-- Top Editorial Bar -->
+    <header class="top-bar">
+      <div class="brand-mark">
+        <i data-lucide="sparkles" style="width: 16px; height: 16px;"></i>
+        <span>19 ЛЕТ</span>
+      </div>
+
+      <!-- Segmented timeline progress -->
+      <nav class="timeline-progress" aria-label="Сцены поздравления">
+        <div class="timeline-dot active" data-index="0" title="Вступление" onclick="goToScene(0)"></div>
+        <div class="timeline-dot" data-index="1" title="День Рождения" onclick="goToScene(1)"></div>
+        <div class="timeline-dot" data-index="2" title="Воспоминания" onclick="goToScene(2)"></div>
+        <div class="timeline-dot" data-index="3" title="Киноплёнка" onclick="goToScene(3)"></div>
+        <div class="timeline-dot" data-index="4" title="Пожелания" onclick="goToScene(4)"></div>
+      </nav>
+
+      <!-- Action items -->
+      <div class="header-controls">
+        <button class="icon-btn" id="audio-toggle-btn" title="Включить атмосферный звук" aria-label="Атмосферный звук" onclick="toggleAmbienceAudio()">
+          <i data-lucide="volume-x" id="audio-icon"></i>
+        </button>
+        <button class="icon-btn" title="Содержание сцен" aria-label="Открыть оглавление" onclick="openChaptersModal()">
+          <i data-lucide="layout-grid"></i>
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Viewport for Scenes -->
+    <main class="scenes-viewport" id="scenes-viewport">
+
+      <!-- SCENE 1: INTRO -->
+      <section class="scene active" id="scene-0" aria-label="Пролог">
+        <div class="scene-content">
+          <div class="intro-meta-badge">CINEMATIC ESSAY · 2026</div>
+          <span class="chapter-eyebrow">Пролог</span>
+          <h1 class="display-title">
+            Кажется, сегодня <br />
+            <span class="display-title-gold">особенный день…</span>
+          </h1>
+          <div class="intro-decor-line" aria-hidden="true"></div>
+          <p class="lead-text">
+            Небольшая персональная история, сотканная из теплых моментов, искреннего дружеского уважения и одного важного повода.
+          </p>
+
+          <button class="btn-cinematic" onclick="goToScene(1)" aria-label="Начать просмотр">
+            <span>Войти в историю</span>
+            <i data-lucide="arrow-right"></i>
+          </button>
+
+          <div class="intro-hint">
+            <i data-lucide="compass"></i>
+            <span>Листай свайпом или используй стрелки клавиатуры</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- SCENE 2: BIRTHDAY REVEAL ("Маша, 19") -->
+      <section class="scene" id="scene-1" aria-label="Глава I: 19 лет">
+        <div class="scene-content">
+          <span class="chapter-eyebrow">Глава I · День Рождения</span>
+
+          <div class="reveal-halo">
+            <h2 class="monumental-number">
+              Маша, <em>19</em>
+            </h2>
+          </div>
+
+          <p class="intro-meta-badge" style="letter-spacing: 0.2em; color: var(--color-gold);">
+            НОВАЯ СТРАНИЦА · НОВЫЕ ГОРИЗОНТЫ
+          </p>
+
+          <!-- Editorial Letter / Friendly Quote -->
+          <div class="editorial-quote-box">
+            <div class="quote-mark">“</div>
+            <div class="quote-body">
+              Девятнадцать — это удивительная высота. Время искренних стремлений, сильного характера, ярких открытий и людей, которые тебя по-настоящему ценят. Этот проект — дружеский жест глубокого уважения к твоему пути, твоей улыбке и всем тем вершинам, которые ты обязательно покоришь.
+            </div>
+            <div class="quote-author-row">
+              <span>С праздником и тёплыми пожеланиями</span>
+              <span>19th Edition</span>
+            </div>
+          </div>
+
+          <div style="display: flex; gap: 14px; flex-wrap: wrap; justify-content: center; width: 100%;">
+            <button class="btn-cinematic" onclick="triggerChampagneConfetti(); goToScene(2);" aria-label="Перейти к воспоминаниям">
+              <span>Дальше к воспоминаниям</span>
+              <i data-lucide="arrow-right"></i>
+            </button>
+            <button class="btn-secondary" onclick="triggerChampagneConfetti()" aria-label="Запустить праздничный салют">
+              <i data-lucide="sparkles"></i>
+              <span>Запустить салют</span>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- SCENE 3: MEMORIES (Архив моментов) -->
+      <section class="scene" id="scene-2" aria-label="Глава II: Воспоминания">
+        <div class="scene-content">
+          <span class="chapter-eyebrow">Глава II · Архив Моментов</span>
+          <h2 class="display-title">
+            Кадры, которые <br />
+            <span class="display-title-gold">остаются с нами</span>
+          </h2>
+          <p class="lead-text">
+            Хроника живых дней, искренних улыбок и памятных историй, которые согревают в любой момент.
+          </p>
+
+          <!-- Editorial Media Container: 9 Photos Gallery -->
+          <div class="editorial-card-container">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(253, 251, 247, 0.08); padding-bottom: 14px;">
+              <div style="font-size: 0.8rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--color-gold);">
+                Коллекция снимков · 9 моментов
+              </div>
+              <div style="font-size: 0.74rem; color: var(--color-ivory-faint);">
+                Нажми на фото для просмотра
+              </div>
+            </div>
+
+            <div class="memories-gallery-grid" id="memories-gallery-grid">
+              <!-- Photo 1 -->
+              <div class="memory-card" onclick="openLightbox(0)">
+                <div class="memory-card-fallback" id="fallback-0">
+                  <i data-lucide="image"></i>
+                  <span class="fallback-frame-label">Кадр 01</span>
+                  <span class="fallback-frame-path">photos/01.jpg</span>
+                  <label class="memory-card-preview-opt edit-only-control" onclick="event.stopPropagation()" title="Локальный предпросмотр (?edit=1)">
+                    <span>Тест предпросмотра</span>
+                    <input type="file" accept="image/*" style="display:none;" onchange="handleSinglePhotoUpload(event, 0)" />
+                  </label>
+                </div>
+                <img class="memory-card-img" id="gallery-img-0" src="photos/01.jpg" alt="Серьёзные лица" onerror="handleGalleryImgError(this, 0)" onload="handleGalleryImgLoaded(0)" />
+                <div class="memory-card-overlay">
+                  <span class="memory-card-num">Кадр 01</span>
+                  <div class="memory-card-title">Серьёзные лица</div>
+                  <div class="memory-card-desc">Мастера невозмутимости</div>
+                </div>
+              </div>
+
+              <!-- Photo 2 -->
+              <div class="memory-card" onclick="openLightbox(1)">
+                <div class="memory-card-fallback" id="fallback-1">
+                  <i data-lucide="image"></i>
+                  <span class="fallback-frame-label">Кадр 02</span>
+                  <span class="fallback-frame-path">photos/02.jpg</span>
+                  <label class="memory-card-preview-opt edit-only-control" onclick="event.stopPropagation()" title="Локальный предпросмотр (?edit=1)">
+                    <span>Тест предпросмотра</span>
+                    <input type="file" accept="image/*" style="display:none;" onchange="handleSinglePhotoUpload(event, 1)" />
+                  </label>
+                </div>
+                <img class="memory-card-img" id="gallery-img-1" src="photos/02.jpg" alt="Выпускной 2023" onerror="handleGalleryImgError(this, 1)" onload="handleGalleryImgLoaded(1)" />
+                <div class="memory-card-overlay">
+                  <span class="memory-card-num">Кадр 02</span>
+                  <div class="memory-card-title">Выпускной 2023</div>
+                  <div class="memory-card-desc">Памятный день и уверенный шаг</div>
+                </div>
+              </div>
+
+              <!-- Photo 3 -->
+              <div class="memory-card" onclick="openLightbox(2)">
+                <div class="memory-card-fallback" id="fallback-2">
+                  <i data-lucide="image"></i>
+                  <span class="fallback-frame-label">Кадр 03</span>
+                  <span class="fallback-frame-path">photos/03.jpg</span>
+                  <label class="memory-card-preview-opt edit-only-control" onclick="event.stopPropagation()" title="Локальный предпросмотр (?edit=1)">
+                    <span>Тест предпросмотра</span>
+                    <input type="file" accept="image/*" style="display:none;" onchange="handleSinglePhotoUpload(event, 2)" />
+                  </label>
+                </div>
+                <img class="memory-card-img" id="gallery-img-2" src="photos/03.jpg" alt="Деловой стиль" onerror="handleGalleryImgError(this, 2)" onload="handleGalleryImgLoaded(2)" />
+                <div class="memory-card-overlay">
+                  <span class="memory-card-num">Кадр 03</span>
+                  <div class="memory-card-title">Деловой стиль</div>
+                  <div class="memory-card-desc">Когда образ говорит сам за себя</div>
+                </div>
+              </div>
+
+              <!-- Photo 4 -->
+              <div class="memory-card" onclick="openLightbox(3)">
+                <div class="memory-card-fallback" id="fallback-3">
+                  <i data-lucide="image"></i>
+                  <span class="fallback-frame-label">Кадр 04</span>
+                  <span class="fallback-frame-path">photos/04.jpg</span>
+                  <label class="memory-card-preview-opt edit-only-control" onclick="event.stopPropagation()" title="Локальный предпросмотр (?edit=1)">
+                    <span>Тест предпросмотра</span>
+                    <input type="file" accept="image/*" style="display:none;" onchange="handleSinglePhotoUpload(event, 3)" />
+                  </label>
+                </div>
+                <img class="memory-card-img" id="gallery-img-3" src="photos/04.jpg" alt="Подготовка к вечеру" onerror="handleGalleryImgError(this, 3)" onload="handleGalleryImgLoaded(3)" />
+                <div class="memory-card-overlay">
+                  <span class="memory-card-num">Кадр 04</span>
+                  <div class="memory-card-title">Подготовка к вечеру</div>
+                  <div class="memory-card-desc">Гаражное настроение и боевой дух</div>
+                </div>
+              </div>
+
+              <!-- Photo 5 -->
+              <div class="memory-card" onclick="openLightbox(4)">
+                <div class="memory-card-fallback" id="fallback-4">
+                  <i data-lucide="image"></i>
+                  <span class="fallback-frame-label">Кадр 05</span>
+                  <span class="fallback-frame-path">photos/05.jpg</span>
+                  <label class="memory-card-preview-opt edit-only-control" onclick="event.stopPropagation()" title="Локальный предпросмотр (?edit=1)">
+                    <span>Тест предпросмотра</span>
+                    <input type="file" accept="image/*" style="display:none;" onchange="handleSinglePhotoUpload(event, 4)" />
+                  </label>
+                </div>
+                <img class="memory-card-img" id="gallery-img-4" src="photos/05.jpg" alt="Гаражная кулинария" onerror="handleGalleryImgError(this, 4)" onload="handleGalleryImgLoaded(4)" />
+                <div class="memory-card-overlay">
+                  <span class="memory-card-num">Кадр 05</span>
+                  <div class="memory-card-title">Гаражная кулинария</div>
+                  <div class="memory-card-desc">Тот самый фирменный суп на плитке</div>
+                </div>
+              </div>
+
+              <!-- Photo 6 -->
+              <div class="memory-card" onclick="openLightbox(5)">
+                <div class="memory-card-fallback" id="fallback-5">
+                  <i data-lucide="image"></i>
+                  <span class="fallback-frame-label">Кадр 06</span>
+                  <span class="fallback-frame-path">photos/06.jpg</span>
+                  <label class="memory-card-preview-opt edit-only-control" onclick="event.stopPropagation()" title="Локальный предпросмотр (?edit=1)">
+                    <span>Тест предпросмотра</span>
+                    <input type="file" accept="image/*" style="display:none;" onchange="handleSinglePhotoUpload(event, 5)" />
+                  </label>
+                </div>
+                <img class="memory-card-img" id="gallery-img-5" src="photos/06.jpg" alt="Ночные поездки" onerror="handleGalleryImgError(this, 5)" onload="handleGalleryImgLoaded(5)" />
+                <div class="memory-card-overlay">
+                  <span class="memory-card-num">Кадр 06</span>
+                  <div class="memory-card-title">Ночные поездки</div>
+                  <div class="memory-card-desc">Огни дороги и тёплая атмосфера</div>
+                </div>
+              </div>
+
+              <!-- Photo 7 -->
+              <div class="memory-card" onclick="openLightbox(6)">
+                <div class="memory-card-fallback" id="fallback-6">
+                  <i data-lucide="image"></i>
+                  <span class="fallback-frame-label">Кадр 07</span>
+                  <span class="fallback-frame-path">photos/07.jpg</span>
+                  <label class="memory-card-preview-opt edit-only-control" onclick="event.stopPropagation()" title="Локальный предпросмотр (?edit=1)">
+                    <span>Тест предпросмотра</span>
+                    <input type="file" accept="image/*" style="display:none;" onchange="handleSinglePhotoUpload(event, 6)" />
+                  </label>
+                </div>
+                <img class="memory-card-img" id="gallery-img-6" src="photos/07.jpg" alt="Тот самый вечер" onerror="handleGalleryImgError(this, 6)" onload="handleGalleryImgLoaded(6)" />
+                <div class="memory-card-overlay">
+                  <span class="memory-card-num">Кадр 07</span>
+                  <div class="memory-card-title">Тот самый вечер</div>
+                  <div class="memory-card-desc">История, которая останется в легендах</div>
+                </div>
+              </div>
+
+              <!-- Photo 8 -->
+              <div class="memory-card" onclick="openLightbox(7)">
+                <div class="memory-card-fallback" id="fallback-7">
+                  <i data-lucide="image"></i>
+                  <span class="fallback-frame-label">Кадр 08</span>
+                  <span class="fallback-frame-path">photos/08.jpg</span>
+                  <label class="memory-card-preview-opt edit-only-control" onclick="event.stopPropagation()" title="Локальный предпросмотр (?edit=1)">
+                    <span>Тест предпросмотра</span>
+                    <input type="file" accept="image/*" style="display:none;" onchange="handleSinglePhotoUpload(event, 7)" />
+                  </label>
+                </div>
+                <img class="memory-card-img" id="gallery-img-7" src="photos/08.jpg" alt="Спонтанные кадры с Машей" onerror="handleGalleryImgError(this, 7)" onload="handleGalleryImgLoaded(7)" />
+                <div class="memory-card-overlay">
+                  <span class="memory-card-num">Кадр 08</span>
+                  <div class="memory-card-title">Спонтанные кадры</div>
+                  <div class="memory-card-desc">Живые эмоции, улыбка и смех</div>
+                </div>
+              </div>
+
+              <!-- Photo 9 -->
+              <div class="memory-card" onclick="openLightbox(8)">
+                <div class="memory-card-fallback" id="fallback-8">
+                  <i data-lucide="image"></i>
+                  <span class="fallback-frame-label">Кадр 09</span>
+                  <span class="fallback-frame-path">photos/09.jpg</span>
+                  <label class="memory-card-preview-opt edit-only-control" onclick="event.stopPropagation()" title="Локальный предпросмотр (?edit=1)">
+                    <span>Тест предпросмотра</span>
+                    <input type="file" accept="image/*" style="display:none;" onchange="handleSinglePhotoUpload(event, 8)" />
+                  </label>
+                </div>
+                <img class="memory-card-img" id="gallery-img-8" src="photos/09.jpg" alt="Селфи на стиле" onerror="handleGalleryImgError(this, 8)" onload="handleGalleryImgLoaded(8)" />
+                <div class="memory-card-overlay">
+                  <span class="memory-card-num">Кадр 09</span>
+                  <div class="memory-card-title">Селфи на стиле</div>
+                  <div class="memory-card-desc">Красивый вечер и отличная компания</div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+          <button class="btn-cinematic" id="btn-scene-2-next" onclick="proceedFromScene2()" aria-label="Перейти дальше">
+            <span id="btn-scene-2-next-text">Дальше к киноплёнке</span>
+            <i data-lucide="arrow-right"></i>
+          </button>
+        </div>
+      </section>
+
+      <!-- SCENE 4: SLIDESHOW FILM (Киноплёнка) -->
+      <section class="scene" id="scene-3" aria-label="Глава III: Киноплёнка">
+        <div class="scene-content">
+          <span class="chapter-eyebrow">Глава III · Киноплёнка</span>
+          <h2 class="display-title">
+            Движение, свет <br />
+            <span class="display-title-gold">и тёплые кадры</span>
+          </h2>
+          <p class="lead-text">
+            Кинематографичная лента памятных моментов — живая хроника к твоему 19-летию.
+          </p>
+
+          <!-- Slideshow Frame -->
+          <div class="editorial-card-container" style="padding: 16px;">
+            <div class="cinema-player-frame" id="slideshow-player-frame">
+              <!-- Vintage film perforations top -->
+              <div class="film-perforations-top">
+                <div class="hole"></div><div class="hole"></div><div class="hole"></div>
+                <div class="hole"></div><div class="hole"></div><div class="hole"></div>
+                <div class="hole"></div><div class="hole"></div><div class="hole"></div>
+              </div>
+
+              <!-- Slideshow Slide Image Container -->
+              <div class="slideshow-slide-wrap" id="slideshow-slide-wrap">
+                <img id="slideshow-slide-img" class="slideshow-slide-img" src="photos/01.jpg" alt="Кадр киноплёнки" onerror="handleSlideImgError(this)" onload="handleSlideImgLoaded(this)" />
+                <div class="slideshow-vignette"></div>
+              </div>
+
+              <!-- Slideshow Caption & Controls Overlay -->
+              <div class="slideshow-info-bar">
+                <div class="slideshow-meta">
+                  <span class="slideshow-counter" id="slideshow-counter">01 / 09</span>
+                  <span class="slideshow-title" id="slideshow-title">Серьёзные лица</span>
+                </div>
+                <div class="slideshow-controls">
+                  <button class="slideshow-ctrl-btn" onclick="slideshowPrevPhoto()" aria-label="Предыдущий кадр">
+                    <i data-lucide="chevron-left"></i>
+                  </button>
+                  <button class="slideshow-ctrl-btn slideshow-play-btn" id="slideshow-play-btn" onclick="toggleSlideshowPlay()" aria-label="Воспроизведение / Пауза">
+                    <i data-lucide="pause" id="slideshow-play-icon"></i>
+                  </button>
+                  <button class="slideshow-ctrl-btn" onclick="slideshowNextPhoto()" aria-label="Следующий кадр">
+                    <i data-lucide="chevron-right"></i>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Vintage film perforations bottom -->
+              <div class="film-perforations-bottom">
+                <div class="hole"></div><div class="hole"></div><div class="hole"></div>
+                <div class="hole"></div><div class="hole"></div><div class="hole"></div>
+                <div class="hole"></div><div class="hole"></div><div class="hole"></div>
+              </div>
+            </div>
+          </div>
+
+          <button class="btn-cinematic" onclick="goToScene(4)" aria-label="Перейти к пожеланиям">
+            <span>К финальным пожеланиям</span>
+            <i data-lucide="arrow-right"></i>
+          </button>
+        </div>
+      </section>
+
+      <!-- SCENE 5: FINAL WISHES (Эпилог & Подарок) -->
+      <section class="scene" id="scene-4" aria-label="Эпилог: Пожелания">
+        <div class="scene-content">
+          <span class="chapter-eyebrow">Эпилог · Тёплые Слова</span>
+          <h2 class="display-title">
+            В добрый путь <br />
+            <span class="display-title-gold">в твои 19</span>
+          </h2>
+
+          <!-- Editorial Letter of Friendship Wishes -->
+          <div class="wishes-letter-card">
+            <div class="wishes-salutation">Дорогая Маша,</div>
+            <p class="wishes-paragraph">
+              Пусть твои 19 станут годом невероятной внутренней гармонии, уверенности в каждом решении и радостных событий рядом с теми, кого ты любишь и ценишь.
+            </p>
+            <p class="wishes-paragraph">
+              Береги свою искренность, оставайся верна своим мечтам и никогда не сомневайся в своих силах. Впереди — прекрасный, яркий и наполненный счастьем путь!
+            </p>
+            <div style="font-size: 0.85rem; color: var(--color-gold); font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase;">
+              — С теплом и глубоким дружеским уважением
+            </div>
+          </div>
+
+          <!-- Interactive Gift Container Placeholder -->
+          <div class="gift-reveal-box" onclick="triggerGiftCelebration()" title="Открыть подарок">
+            <div class="gift-icon-wrap">
+              <i data-lucide="gift"></i>
+            </div>
+            <div style="flex: 1;">
+              <div style="font-family: var(--font-serif-display); font-size: 1.1rem; color: var(--color-ivory);">
+                Интерактивный подарок
+              </div>
+              <div style="font-size: 0.78rem; color: var(--color-ivory-faint);">
+                Нажми, чтобы распаковать праздничный сюрприз
+              </div>
+            </div>
+            <i data-lucide="sparkles" style="color: var(--color-gold); width: 20px; height: 20px;"></i>
+          </div>
+
+          <div style="display: flex; gap: 14px; flex-wrap: wrap; justify-content: center; margin-top: 24px;">
+            <button class="btn-cinematic" onclick="triggerChampagneConfetti();" aria-label="Праздничный салют">
+              <i data-lucide="sparkles"></i>
+              <span>Праздничный салют</span>
+            </button>
+            <button class="btn-secondary" onclick="goToScene(0)" aria-label="Смотреть снова с начала">
+              <i data-lucide="rotate-ccw"></i>
+              <span>Смотреть снова</span>
+            </button>
+          </div>
+
+          <!-- Classified Dossier Trigger Button -->
+          <div class="classified-teaser-wrap">
+            <button class="btn-classified-dossier" onclick="initiateClassifiedInvestigation()" aria-label="Открыть секретные материалы">
+              <div class="classified-top-stamp">
+                <span class="stamp-hazard-dot"></span>
+                <span>ЗАСЕКРЕЧЕНО // ДЕЛО № 2026-M // ОГРАНИЧЕННЫЙ ДОСТУП</span>
+              </div>
+              <div class="classified-main-title">
+                <i data-lucide="shield-alert" class="classified-lock-icon"></i>
+                <span>«Маша, есть кое-что, что тебе нужно увидеть…»</span>
+              </div>
+              <div class="classified-bottom-meta">
+                <span>МАТЕРИАЛЫ РАССЛЕДОВАНИЯ · НАЖМИ ДЛЯ РАСПЕЧАТЫВАНИЯ</span>
+                <i data-lucide="chevron-right" style="width: 14px; height: 14px;"></i>
+              </div>
+            </button>
+          </div>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- Bottom Navigation Dock -->
+    <footer class="bottom-dock">
+      <div class="dock-left">
+        <button class="btn-ghost" id="btn-prev" onclick="prevScene()" aria-label="Предыдущая сцена" style="opacity: 0; pointer-events: none;">
+          <i data-lucide="chevron-left"></i>
+          <span>Назад</span>
+        </button>
+        <div class="chapter-tag" id="current-chapter-indicator">
+          СЦЕНА <strong>01 / 05</strong>
+        </div>
+      </div>
+
+      <div class="shortcut-legend">
+        ← / → ДЛЯ НАВИГАЦИИ
+      </div>
+
+      <div class="dock-right">
+        <button class="btn-secondary" id="btn-next" onclick="nextScene()" aria-label="Следующая сцена">
+          <span>Далее</span>
+          <i data-lucide="chevron-right"></i>
+        </button>
+      </div>
+    </footer>
+
+  </div>
+
+  <!-- Modal: Chapters Quick Switcher -->
+  <div class="modal-backdrop" id="chapters-modal" onclick="closeChaptersModal(event)">
+    <div class="modal-dialog" onclick="event.stopPropagation()">
+      <div class="modal-header">
+        <h3 class="modal-title">Оглавление фильма</h3>
+        <button class="icon-btn" onclick="closeChaptersModal()" aria-label="Закрыть">
+          <i data-lucide="x"></i>
+        </button>
+      </div>
+      <div class="chapters-list">
+        <button class="chapter-row-btn active" data-chapter="0" onclick="goToScene(0); closeChaptersModal();">
+          <span>01. Пролог — Особенный день</span>
+          <i data-lucide="chevron-right"></i>
+        </button>
+        <button class="chapter-row-btn" data-chapter="1" onclick="goToScene(1); closeChaptersModal();">
+          <span>02. Глава I — Маша, 19 лет</span>
+          <i data-lucide="chevron-right"></i>
+        </button>
+        <button class="chapter-row-btn" data-chapter="2" onclick="goToScene(2); closeChaptersModal();">
+          <span>03. Глава II — Архив моментов</span>
+          <i data-lucide="chevron-right"></i>
+        </button>
+        <button class="chapter-row-btn" data-chapter="3" onclick="goToScene(3); closeChaptersModal();">
+          <span>04. Глава III — Киноплёнка 19</span>
+          <i data-lucide="chevron-right"></i>
+        </button>
+        <button class="chapter-row-btn" data-chapter="4" onclick="goToScene(4); closeChaptersModal();">
+          <span>05. Эпилог — Тёплые слова & Подарок</span>
+          <i data-lucide="chevron-right"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Lightbox Fullscreen Photo Viewer Modal -->
+  <div class="gallery-lightbox" id="gallery-lightbox" role="dialog" aria-modal="true" aria-label="Просмотр фотографии" onclick="handleLightboxBackdropClick(event)">
+    <div class="lightbox-top-bar">
+      <div class="lightbox-counter" id="lightbox-counter">01 / 09</div>
+      <button class="icon-btn" onclick="closeLightbox()" aria-label="Закрыть просмотр" title="Закрыть">
+        <i data-lucide="x"></i>
+      </button>
+    </div>
+
+    <button class="lightbox-nav-btn lightbox-btn-prev" onclick="lightboxPrevPhoto(event)" aria-label="Предыдущее фото">
+      <i data-lucide="chevron-left"></i>
+    </button>
+
+    <div class="lightbox-content" onclick="event.stopPropagation()">
+      <div class="lightbox-image-wrap">
+        <img id="lightbox-img" class="lightbox-img" src="" alt="Фотография воспоминания" />
+      </div>
+      <div class="lightbox-caption-panel">
+        <h4 class="lightbox-title" id="lightbox-title"></h4>
+        <p class="lightbox-desc" id="lightbox-desc"></p>
+      </div>
+    </div>
+
+    <button class="lightbox-nav-btn lightbox-btn-next" onclick="lightboxNextPhoto(event)" aria-label="Следующее фото">
+      <i data-lucide="chevron-right"></i>
+    </button>
+  </div>
+
+  <!-- Interactive Gift Unboxing Modal Overlay -->
+  <div class="gift-modal-backdrop" id="gift-modal" role="dialog" aria-modal="true" aria-label="Интерактивный подарок" onclick="handleGiftBackdropClick(event)">
+    <div class="gift-modal-dialog" onclick="event.stopPropagation()">
+      <button class="gift-modal-close-btn" onclick="closeGiftModal()" aria-label="Закрыть подарок" title="Закрыть">
+        <i data-lucide="x"></i>
+      </button>
+
+      <!-- Stage 1: Wobbling 3D Gift Box (Invite to open) -->
+      <div class="gift-box-stage" id="gift-box-stage" onclick="unboxGift()">
+        <div class="gift-glow-halo"></div>
+
+        <div class="gift-box-container" id="gift-box-element">
+          <!-- Lid with Ribbon and Bow -->
+          <div class="gift-lid-wrap">
+            <div class="gift-lid-ribbon"></div>
+            <div class="gift-bow-assembly">
+              <div class="bow-loop-left"></div>
+              <div class="bow-knot-center"></div>
+              <div class="bow-loop-right"></div>
+            </div>
+          </div>
+
+          <!-- Base with Crossing Ribbons -->
+          <div class="gift-base-wrap">
+            <div class="gift-base-ribbon-v"></div>
+            <div class="gift-base-ribbon-h"></div>
+          </div>
+        </div>
+
+        <div class="gift-click-invite">
+          <i data-lucide="sparkles" style="width: 16px; height: 16px;"></i>
+          <span>Нажми на коробку, чтобы открыть</span>
+          <i data-lucide="sparkles" style="width: 16px; height: 16px;"></i>
+        </div>
+      </div>
+
+      <!-- Stage 2: Animated Unboxed Greeting Card -->
+      <div class="unboxed-card-container" id="gift-card-element">
+        <div class="hearts-burst-container" id="hearts-container"></div>
+
+        <div class="card-top-eyebrow">
+          <i data-lucide="sparkles" style="width: 14px; height: 14px;"></i>
+          <span>ПОЗДРАВЛЕНИЕ · 19 ЛЕТ</span>
+        </div>
+
+        <h3 class="card-main-title">
+          Маша, это уже без приколов!
+        </h3>
+        <div class="card-subtitle-gold">
+          С 19-летием тебя!
+        </div>
+
+        <p class="card-body-paragraph">
+          Желаю тебе побольше счастливых моментов, искренних улыбок, крутых приключений и людей, рядом с которыми всегда можно быть собой.
+        </p>
+
+        <p class="card-body-paragraph">
+          Пусть мечты сбываются, деньги не заканчиваются в самый неподходящий момент, а поводов для радости будет столько, что все не поместятся даже в эту коробку.
+        </p>
+
+        <p class="card-body-paragraph">
+          Оставайся такой же классной, лови от жизни максимум и помни: <strong>19 — это только начало!</strong>
+        </p>
+
+        <div class="card-final-toast">
+          <i data-lucide="cake" style="color: var(--color-gold); width: 22px; height: 22px;"></i>
+          <span>С днём рождения! Пусть у тебя всё будет офигенно! ✨</span>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="card-actions-row">
+          <button class="btn-hug-gift" onclick="hugGift(event)" aria-label="Обнять этот подарок">
+            <i data-lucide="heart"></i>
+            <span>Обнять этот подарок</span>
+          </button>
+          <button class="btn-secondary" onclick="resetGiftBox()" aria-label="Открыть коробку снова">
+            <i data-lucide="rotate-ccw"></i>
+            <span>Открыть ещё раз</span>
+          </button>
+          <button class="btn-ghost" onclick="closeGiftModal()" aria-label="Закрыть открытку">
+            <i data-lucide="x"></i>
+            <span>Закрыть</span>
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Fullscreen Classified Investigation Overlay -->
+  <div id="classified-overlay" class="classified-overlay" aria-hidden="true" role="dialog" aria-modal="true">
+    <div class="crt-scanlines"></div>
+    <div class="crt-vignette"></div>
+
+    <div class="classified-container" id="classified-container">
+      <div class="classified-top-nav">
+        <div class="classified-header-badge">
+          <span class="stamp-hazard-dot"></span>
+          <span>АРХИВ РАССЛЕДОВАНИЯ // СОВЕРШЕННО СЕКРЕТНО</span>
+        </div>
+        <button class="btn-ghost" onclick="closeClassifiedInvestigation()" style="color: #ff6b6b; font-size: 0.85rem;" aria-label="Закрыть">
+          <i data-lucide="x"></i>
+          <span>Закрыть</span>
+        </button>
+      </div>
+
+      <!-- Investigation Title Stamp -->
+      <div class="investigation-title-badge" id="investigation-stamp">
+        ЗАСЕКРЕЧЕНО — ДОСТУП РАЗРЕШЁН
+      </div>
+
+      <!-- Typewriter Text Investigation Stage -->
+      <div class="typewriter-stage" id="typewriter-stage">
+        <div class="typewriter-line" id="tw-line-1"></div>
+        <div class="typewriter-line" id="tw-line-2"></div>
+        <div class="typewriter-line shock" id="tw-line-3"></div>
+      </div>
+
+      <!-- Evidence Dossier Folder Card -->
+      <div class="evidence-folder-card" id="evidence-folder-card">
+        <div class="evidence-header-stamp">
+          <div>
+            <div style="font-family: monospace, monospace; font-size: 0.78rem; color: #ff6b6b; letter-spacing: 0.16em; text-transform: uppercase;">
+              ВЕЩЕСТВЕННОЕ ДОКАЗАТЕЛЬСТВО // ДЕЛО № 2026-М
+            </div>
+            <div style="font-size: 0.72rem; color: var(--color-ivory-faint); margin-top: 3px;">
+              ФИКСАЦИЯ: 13 ОКТЯБРЯ · ОБЪЕКТ «СИНИЙ ПАРИК»
+            </div>
+          </div>
+          <div class="evidence-red-stamp">
+            УЛИКА № 01
+          </div>
+        </div>
+
+        <div class="evidence-photo-container">
+          <img id="evidence-photo" 
+               class="evidence-image" 
+               src="photos/06.jpg" 
+               alt="Вещественное доказательство: синий парик на кровати"
+               onerror="handleEvidencePhotoError(this)" />
+        </div>
+
+        <!-- Gradual Verdict Caption -->
+        <div class="evidence-caption-box" id="evidence-caption-box">
+          «Я, конечно, могу ошибаться…<br />
+          <em style="color: #ff6b6b; display: block; margin-top: 10px;">Но объяснить ЭТО ему всё-таки придётся. 💀</em>»
+        </div>
+
+        <!-- Quick photo loader if testing locally with local file (Edit mode only) -->
+        <div class="edit-only-control" style="text-align: center; margin-top: 16px;">
+          <label class="evidence-fallback-upload" title="Выбрать файл фото с устройства">
+            <i data-lucide="upload" style="width: 14px; height: 14px;"></i>
+            <span id="evidence-upload-label">Загрузить / сменить файл фото</span>
+            <input type="file" id="evidence-file-input" accept="image/*" style="display:none;" onchange="handleEvidenceFileUpload(event)" />
+          </label>
+        </div>
+      </div>
+
+      <!-- Bottom Actions -->
+      <div class="investigation-actions" id="investigation-actions" style="opacity: 0; transition: opacity 600ms ease;">
+        <button class="btn-cinematic" onclick="closeClassifiedInvestigation()" aria-label="Вернуться к празднику">
+          <i data-lucide="sparkles"></i>
+          <span>Вернуться к празднику</span>
+        </button>
+        <button class="btn-secondary" onclick="restartInvestigation()" aria-label="Повторить расследование">
+          <i data-lucide="rotate-ccw"></i>
+          <span>Повторить расследование</span>
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Client JavaScript Logic -->
+  <script>
+    /* ==========================================================================
+       SCENE CONTROLLER & NAVIGATION
+       ========================================================================== */
+    const scenes = [
+      { id: "scene-0", title: "Пролог", number: "01 / 05" },
+      { id: "scene-1", title: "19 лет", number: "02 / 05" },
+      { id: "scene-2", title: "Воспоминания", number: "03 / 05" },
+      { id: "scene-3", title: "Киноплёнка", number: "04 / 05" },
+      { id: "scene-4", title: "Пожелания", number: "05 / 05" }
+    ];
+
+    let currentSceneIndex = 0;
+    const totalScenes = scenes.length;
+
+    function updateSceneUI() {
+      // Update scene classes
+      for (let i = 0; i < totalScenes; i++) {
+        const sceneEl = document.getElementById(`scene-${i}`);
+        if (!sceneEl) continue;
+
+        sceneEl.classList.remove("active", "exit-prev");
+        if (i === currentSceneIndex) {
+          sceneEl.classList.add("active");
+          sceneEl.scrollTop = 0;
+        } else if (i < currentSceneIndex) {
+          sceneEl.classList.add("exit-prev");
+        }
+      }
+
+      // Update timeline dots
+      const dots = document.querySelectorAll(".timeline-dot");
+      dots.forEach((dot, index) => {
+        dot.classList.remove("active", "passed");
+        if (index === currentSceneIndex) {
+          dot.classList.add("active");
+        } else if (index < currentSceneIndex) {
+          dot.classList.add("passed");
+        }
+      });
+
+      // Update chapter label indicator
+      const currentIndicator = document.getElementById("current-chapter-indicator");
+      if (currentIndicator) {
+        currentIndicator.innerHTML = `СЦЕНА <strong>${scenes[currentSceneIndex].number} · ${scenes[currentSceneIndex].title}</strong>`;
+      }
+
+      // Update prev/next dock buttons
+      const btnPrev = document.getElementById("btn-prev");
+      const btnNext = document.getElementById("btn-next");
+
+      if (btnPrev) {
+        if (currentSceneIndex === 0) {
+          btnPrev.style.opacity = "0";
+          btnPrev.style.pointerEvents = "none";
+        } else {
+          btnPrev.style.opacity = "1";
+          btnPrev.style.pointerEvents = "auto";
+        }
+      }
+
+      if (btnNext) {
+        if (currentSceneIndex === totalScenes - 1) {
+          btnNext.innerHTML = '<span>В начало</span><i data-lucide="rotate-ccw"></i>';
+        } else {
+          btnNext.innerHTML = '<span>Далее</span><i data-lucide="chevron-right"></i>';
+        }
+      }
+
+      // Update modal active chapter list item
+      const modalBtns = document.querySelectorAll(".chapter-row-btn");
+      modalBtns.forEach((btn, index) => {
+        if (index === currentSceneIndex) {
+          btn.classList.add("active");
+        } else {
+          btn.classList.remove("active");
+        }
+      });
+
+      // Refresh lucide icons
+      if (window.lucide) {
+        lucide.createIcons();
+      }
+    }
+
+    let isScene3Hidden = true;
+
+    function countLoadedPhotos() {
+      let count = 0;
+      for (let i = 0; i < galleryPhotos.length; i++) {
+        const img = document.getElementById("gallery-img-" + i);
+        if (img && img.naturalWidth > 0) {
+          count++;
+        }
+      }
+      return count;
+    }
+
+    function checkScene3Availability() {
+      const count = countLoadedPhotos();
+      const scene3El = document.getElementById("scene-3");
+      const chapterBtn3 = document.querySelector('.chapter-row-btn[data-chapter="3"]');
+      const dots = document.querySelectorAll(".timeline-dot");
+      const dot3 = dots && dots[3];
+      const btnNext2Text = document.getElementById("btn-scene-2-next-text");
+
+      if (count < 3) {
+        isScene3Hidden = true;
+        if (scene3El) scene3El.classList.add("scene-hidden");
+        if (chapterBtn3) chapterBtn3.style.display = "none";
+        if (dot3) dot3.style.display = "none";
+        if (btnNext2Text) btnNext2Text.textContent = "К финальным пожеланиям";
+      } else {
+        isScene3Hidden = false;
+        if (scene3El) scene3El.classList.remove("scene-hidden");
+        if (chapterBtn3) chapterBtn3.style.display = "";
+        if (dot3) dot3.style.display = "";
+        if (btnNext2Text) btnNext2Text.textContent = "Дальше к киноплёнке";
+      }
+    }
+
+    function proceedFromScene2() {
+      if (isScene3Hidden) {
+        goToScene(4);
+      } else {
+        goToScene(3);
+      }
+    }
+
+    function goToScene(index) {
+      if (index < 0 || index >= totalScenes) return;
+      if (isScene3Hidden && index === 3) {
+        index = 4;
+      }
+      currentSceneIndex = index;
+      updateSceneUI();
+
+      // Trigger scene specific effects
+      if (currentSceneIndex === 1) {
+        setTimeout(() => triggerChampagneConfetti(0.4), 300);
+      } else if (currentSceneIndex === 3) {
+        renderSlide(currentSlideIndex);
+        startSlideshowTimer();
+      } else {
+        stopSlideshowTimer();
+      }
+    }
+
+    function nextScene() {
+      let target = currentSceneIndex + 1;
+      if (isScene3Hidden && target === 3) {
+        target = 4;
+      }
+      if (target < totalScenes) {
+        goToScene(target);
+      } else {
+        goToScene(0);
+      }
+    }
+
+    function prevScene() {
+      let target = currentSceneIndex - 1;
+      if (isScene3Hidden && target === 3) {
+        target = 2;
+      }
+      if (target >= 0) {
+        goToScene(target);
+      }
+    }
+
+    // Modal Chapters Switcher
+    function openChaptersModal() {
+      const modal = document.getElementById("chapters-modal");
+      if (modal) modal.classList.add("open");
+    }
+
+    function closeChaptersModal(e) {
+      const modal = document.getElementById("chapters-modal");
+      if (modal) modal.classList.remove("open");
+    }
+
+    /* ==========================================================================
+       GALLERY LIGHTBOX & PHOTO MANAGEMENT (SCENE 3)
+       ========================================================================== */
+    const galleryPhotos = [
+      {
+        src: "photos/01.jpg",
+        title: "Серьёзные лица",
+        desc: "Мастера невозмутимости и особого настроения"
+      },
+      {
+        src: "photos/02.jpg",
+        title: "Выпускной 2023",
+        desc: "Памятный день, лента и уверенный шаг вперёд"
+      },
+      {
+        src: "photos/03.jpg",
+        title: "Деловой стиль",
+        desc: "Когда образ говорит сам за себя"
+      },
+      {
+        src: "photos/04.jpg",
+        title: "Подготовка к вечеру",
+        desc: "Гаражное настроение и боевой настрой"
+      },
+      {
+        src: "photos/05.jpg",
+        title: "Гаражная кулинария",
+        desc: "Тот самый фирменный суп на электроплитке"
+      },
+      {
+        src: "photos/06.jpg",
+        title: "Ночные поездки",
+        desc: "Огни дороги и тёплая ночная атмосфера"
+      },
+      {
+        src: "photos/07.jpg",
+        title: "Тот самый вечер",
+        desc: "История, которая останется в легендах"
+      },
+      {
+        src: "photos/08.jpg",
+        title: "Спонтанные кадры",
+        desc: "Живые эмоции, улыбка и искренний смех"
+      },
+      {
+        src: "photos/09.jpg",
+        title: "Селфи на стиле",
+        desc: "Красивый вечер и отличная компания"
+      }
+    ];
+
+    let currentLightboxIndex = 0;
+    let isLightboxOpen = false;
+
+    function openLightbox(index) {
+      if (index < 0 || index >= galleryPhotos.length) return;
+      currentLightboxIndex = index;
+      isLightboxOpen = true;
+
+      const lightbox = document.getElementById("gallery-lightbox");
+      const img = document.getElementById("lightbox-img");
+      const counter = document.getElementById("lightbox-counter");
+      const title = document.getElementById("lightbox-title");
+      const desc = document.getElementById("lightbox-desc");
+
+      const photoData = galleryPhotos[currentLightboxIndex];
+      img.src = photoData.src;
+
+      counter.textContent = `${String(currentLightboxIndex + 1).padStart(2, "0")} / ${String(galleryPhotos.length).padStart(2, "0")}`;
+      title.textContent = photoData.title;
+      desc.textContent = photoData.desc;
+
+      lightbox.classList.add("active");
+      if (window.lucide) lucide.createIcons();
+    }
+
+    function closeLightbox() {
+      const lightbox = document.getElementById("gallery-lightbox");
+      if (lightbox) {
+        lightbox.classList.remove("active");
+        isLightboxOpen = false;
+      }
+    }
+
+    function handleLightboxBackdropClick(e) {
+      if (e.target.id === "gallery-lightbox") {
+        closeLightbox();
+      }
+    }
+
+    function lightboxNextPhoto(e) {
+      if (e) e.stopPropagation();
+      openLightbox((currentLightboxIndex + 1) % galleryPhotos.length);
+    }
+
+    function lightboxPrevPhoto(e) {
+      if (e) e.stopPropagation();
+      openLightbox((currentLightboxIndex - 1 + galleryPhotos.length) % galleryPhotos.length);
+    }
+
+    function handleGalleryImgLoaded(index) {
+      const fallback = document.getElementById("fallback-" + index);
+      if (fallback) fallback.style.display = "none";
+      checkScene3Availability();
+    }
+
+    function handleGalleryImgError(img, index) {
+      const fallback = document.getElementById("fallback-" + index);
+      if (fallback) fallback.style.display = "flex";
+      checkScene3Availability();
+    }
+
+    function handleSinglePhotoUpload(e, index) {
+      const file = e.target.files && e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(evt) {
+        const dataUrl = evt.target.result;
+        const img = document.getElementById("gallery-img-" + index);
+        if (img) img.src = dataUrl;
+        const fallback = document.getElementById("fallback-" + index);
+        if (fallback) fallback.style.display = "none";
+
+        if (isLightboxOpen && currentLightboxIndex === index) {
+          const lbImg = document.getElementById("lightbox-img");
+          if (lbImg) lbImg.src = dataUrl;
+        }
+        checkScene3Availability();
+      };
+      reader.readAsDataURL(file);
+    }
+
+    /* ==========================================================================
+       KEYBOARD & SWIPE GESTURES
+       ========================================================================== */
+    window.addEventListener("keydown", (e) => {
+      if (isLightboxOpen) {
+        if (e.key === "ArrowRight") {
+          lightboxNextPhoto();
+        } else if (e.key === "ArrowLeft") {
+          lightboxPrevPhoto();
+        } else if (e.key === "Escape") {
+          closeLightbox();
+        }
+        return;
+      }
+
+      if (e.key === "ArrowRight" || e.key === "PageDown") {
+        nextScene();
+      } else if (e.key === "ArrowLeft" || e.key === "PageUp") {
+        prevScene();
+      } else if (e.key === "Escape") {
+        closeChaptersModal();
+        closeGiftModal();
+        closeClassifiedInvestigation();
+      }
+    });
+
+    // Touch swipe gesture listener
+    let touchStartX = 0;
+    let touchStartY = 0;
+    let touchTargetIsLightbox = false;
+
+    window.addEventListener("touchstart", (e) => {
+      touchStartX = e.changedTouches[0].screenX;
+      touchStartY = e.changedTouches[0].screenY;
+      touchTargetIsLightbox = Boolean(e.target.closest("#gallery-lightbox"));
+    }, { passive: true });
+
+    window.addEventListener("touchend", (e) => {
+      const touchEndX = e.changedTouches[0].screenX;
+      const touchEndY = e.changedTouches[0].screenY;
+      const diffX = touchEndX - touchStartX;
+      const diffY = touchEndY - touchStartY;
+
+      if (Math.abs(diffX) > 50 && Math.abs(diffX) > Math.abs(diffY) * 1.5) {
+        if (isLightboxOpen || touchTargetIsLightbox) {
+          if (diffX < 0) {
+            lightboxNextPhoto();
+          } else {
+            lightboxPrevPhoto();
+          }
+          return;
+        }
+
+        if (diffX < 0) {
+          nextScene();
+        } else {
+          prevScene();
+        }
+      }
+    }, { passive: true });
+
+    /* ==========================================================================
+       CHAMPAGNE GOLD CONFETTI (Custom Luxury Aesthetic)
+       No clownish rainbow colors: Ivory, Champagne Gold, Soft Peach, Pearl
+       ========================================================================== */
+    function triggerChampagneConfetti(scale = 1.0) {
+      if (typeof confetti !== "function") return;
+
+      const goldColors = ["#e5c378", "#f4d99b", "#fdfbf7", "#ffb5a7", "#ffffff"];
+
+      confetti({
+        particleCount: Math.floor(40 * scale),
+        spread: 70,
+        origin: { y: 0.65 },
+        colors: goldColors,
+        ticks: 220,
+        gravity: 0.8,
+        scalar: 0.9,
+        drift: 0,
+      });
+
+      setTimeout(() => {
+        confetti({
+          particleCount: Math.floor(30 * scale),
+          angle: 60,
+          spread: 55,
+          origin: { x: 0 },
+          colors: goldColors,
+          ticks: 200,
+          gravity: 0.75,
+        });
+        confetti({
+          particleCount: Math.floor(30 * scale),
+          angle: 120,
+          spread: 55,
+          origin: { x: 1 },
+          colors: goldColors,
+          ticks: 200,
+          gravity: 0.75,
+        });
+      }, 200);
+    }
+
+    /* ==========================================================================
+       INTERACTIVE GIFT UNBOXING CONTROLLER
+       ========================================================================== */
+    let isUnboxingGift = false;
+
+    function openGiftModal() {
+      const modal = document.getElementById("gift-modal");
+      if (modal) {
+        modal.classList.add("open");
+        if (window.lucide) lucide.createIcons();
+      }
+    }
+
+    function closeGiftModal() {
+      const modal = document.getElementById("gift-modal");
+      if (modal) {
+        modal.classList.remove("open");
+      }
+    }
+
+    function handleGiftBackdropClick(e) {
+      if (e.target.id === "gift-modal") {
+        closeGiftModal();
+      }
+    }
+
+    function triggerGiftCelebration() {
+      openGiftModal();
+    }
+
+    function playGiftUnboxSound() {
+      try {
+        const AudioClass = window.AudioContext || window.webkitAudioContext;
+        if (!AudioClass) return;
+        const ctx = getInvestigationAudio();
+        if (!ctx) return;
+
+        // Shimmering golden chime arpeggio: C5 (523Hz), E5 (659Hz), G5 (784Hz), B5 (987Hz), C6 (1046Hz)
+        const notes = [523.25, 659.25, 783.99, 987.77, 1046.50];
+        notes.forEach((freq, idx) => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = "sine";
+          osc.frequency.setValueAtTime(freq, ctx.currentTime + idx * 0.08);
+          gain.gain.setValueAtTime(0.0001, ctx.currentTime + idx * 0.08);
+          gain.gain.linearRampToValueAtTime(0.08, ctx.currentTime + idx * 0.08 + 0.03);
+          gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + idx * 0.08 + 1.2);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(ctx.currentTime + idx * 0.08);
+          osc.stop(ctx.currentTime + idx * 0.08 + 1.3);
+        });
+      } catch (e) {}
+    }
+
+    function playHugSound() {
+      try {
+        const ctx = getInvestigationAudio();
+        if (!ctx) return;
+        // Warm resonant hug chords
+        [440, 554.37, 659.25].forEach((freq) => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = "triangle";
+          osc.frequency.setValueAtTime(freq, ctx.currentTime);
+          gain.gain.setValueAtTime(0.001, ctx.currentTime);
+          gain.gain.linearRampToValueAtTime(0.06, ctx.currentTime + 0.05);
+          gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 1.8);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start();
+          osc.stop(ctx.currentTime + 1.9);
+        });
+      } catch (e) {}
+    }
+
+    function unboxGift() {
+      if (isUnboxingGift) return;
+      isUnboxingGift = true;
+
+      const boxContainer = document.getElementById("gift-box-element");
+      const boxStage = document.getElementById("gift-box-stage");
+      const cardElement = document.getElementById("gift-card-element");
+
+      if (boxContainer) {
+        boxContainer.classList.add("opening");
+      }
+
+      playGiftUnboxSound();
+      triggerChampagneConfetti(1.8);
+
+      setTimeout(() => {
+        if (boxStage) boxStage.classList.add("hidden-stage");
+        if (cardElement) {
+          cardElement.classList.add("visible");
+          cardElement.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
+        if (window.lucide) lucide.createIcons();
+        isUnboxingGift = false;
+      }, 550);
+    }
+
+    function hugGift(event) {
+      const cardElement = document.getElementById("gift-card-element");
+      if (cardElement) {
+        cardElement.classList.add("hugged");
+      }
+
+      playHugSound();
+
+      // Launch floating hearts around the card
+      const container = document.getElementById("hearts-container");
+      if (container) {
+        const heartSymbols = ["💛", "✨", "💖", "🌸", "⭐", "💫"];
+        for (let i = 0; i < 24; i++) {
+          const heart = document.createElement("div");
+          heart.className = "floating-heart";
+          heart.textContent = heartSymbols[Math.floor(Math.random() * heartSymbols.length)];
+          heart.style.left = `${10 + Math.random() * 80}%`;
+          heart.style.top = `${20 + Math.random() * 60}%`;
+          heart.style.setProperty("--dx", `${(Math.random() - 0.5) * 160}px`);
+          heart.style.setProperty("--rot", `${(Math.random() - 0.5) * 60}deg`);
+          heart.style.animationDelay = `${Math.random() * 0.4}s`;
+          container.appendChild(heart);
+
+          setTimeout(() => heart.remove(), 2600);
+        }
+      }
+
+      // Delicate mini-confetti burst
+      if (typeof confetti === "function") {
+        confetti({
+          particleCount: 30,
+          spread: 75,
+          origin: { y: 0.6 },
+          colors: ["#ffb5a7", "#ffd1c7", "#e5c378", "#ffffff"],
+          gravity: 0.7,
+        });
+      }
+
+      alertModalNotice("Объятия доставлены!", "Тёплое дружеское тепло и поддержка всегда с тобой! 💛");
+    }
+
+    function resetGiftBox() {
+      const boxContainer = document.getElementById("gift-box-element");
+      const boxStage = document.getElementById("gift-box-stage");
+      const cardElement = document.getElementById("gift-card-element");
+
+      if (cardElement) {
+        cardElement.classList.remove("visible", "hugged");
+      }
+      if (boxContainer) {
+        boxContainer.classList.remove("opening");
+      }
+      if (boxStage) {
+        boxStage.classList.remove("hidden-stage");
+      }
+      isUnboxingGift = false;
+      if (window.lucide) lucide.createIcons();
+    }
+
+    /* ==========================================================================
+       SCENE 4: CINEMA FILM SLIDESHOW CONTROLLER
+       ========================================================================== */
+    let currentSlideIndex = 0;
+    let isSlideshowPlaying = true;
+    let slideshowInterval = null;
+
+    function renderSlide(index) {
+      if (!galleryPhotos || galleryPhotos.length === 0) return;
+      currentSlideIndex = (index + galleryPhotos.length) % galleryPhotos.length;
+      const photo = galleryPhotos[currentSlideIndex];
+
+      const img = document.getElementById("slideshow-slide-img");
+      const counter = document.getElementById("slideshow-counter");
+      const title = document.getElementById("slideshow-title");
+
+      if (counter) {
+        counter.textContent = `${String(currentSlideIndex + 1).padStart(2, "0")} / ${String(galleryPhotos.length).padStart(2, "0")}`;
+      }
+      if (title) {
+        title.textContent = photo.title;
+      }
+      if (img) {
+        img.classList.add("fading");
+        setTimeout(() => {
+          img.src = photo.src;
+          img.alt = photo.title;
+          img.classList.remove("fading");
+        }, 280);
+      }
+    }
+
+    function slideshowNextPhoto() {
+      renderSlide(currentSlideIndex + 1);
+    }
+
+    function slideshowPrevPhoto() {
+      renderSlide(currentSlideIndex - 1);
+    }
+
+    function toggleSlideshowPlay() {
+      isSlideshowPlaying = !isSlideshowPlaying;
+      const btn = document.getElementById("slideshow-play-btn");
+      if (btn) {
+        btn.innerHTML = isSlideshowPlaying
+          ? '<i data-lucide="pause"></i>'
+          : '<i data-lucide="play"></i>';
+        if (window.lucide) lucide.createIcons();
+      }
+      if (isSlideshowPlaying) {
+        startSlideshowTimer();
+      } else {
+        stopSlideshowTimer();
+      }
+    }
+
+    function startSlideshowTimer() {
+      stopSlideshowTimer();
+      if (!isSlideshowPlaying) return;
+      slideshowInterval = setInterval(() => {
+        if (currentSceneIndex === 3 && isSlideshowPlaying) {
+          slideshowNextPhoto();
+        }
+      }, 4500);
+    }
+
+    function stopSlideshowTimer() {
+      if (slideshowInterval) {
+        clearInterval(slideshowInterval);
+        slideshowInterval = null;
+      }
+    }
+
+    function handleSlideImgError(img) {
+      // In case image not ready
+    }
+
+    function handleSlideImgLoaded(img) {
+      checkScene3Availability();
+    }
+
+    function alertModalNotice(title, message) {
+      // Non-intrusive elegant toast or simple gentle visual feedback
+      const toast = document.createElement("div");
+      toast.style.position = "fixed";
+      toast.style.bottom = "90px";
+      toast.style.left = "50%";
+      toast.style.transform = "translateX(-50%) translateY(20px)";
+      toast.style.background = "rgba(18, 23, 34, 0.95)";
+      toast.style.border = "1px solid var(--color-gold-border)";
+      toast.style.color = "var(--color-ivory)";
+      toast.style.padding = "14px 24px";
+      toast.style.borderRadius = "6px";
+      toast.style.backdropFilter = "blur(12px)";
+      toast.style.boxShadow = "0 20px 40px rgba(0,0,0,0.6)";
+      toast.style.zIndex = "999";
+      toast.style.fontSize = "0.85rem";
+      toast.style.textAlign = "center";
+      toast.style.maxWidth = "90vw";
+      toast.style.transition = "all 300ms ease";
+      toast.innerHTML = `<strong style="color: var(--color-gold); display: block; margin-bottom: 4px;">${title}</strong><span>${message}</span>`;
+
+      document.body.appendChild(toast);
+      requestAnimationFrame(() => {
+        toast.style.transform = "translateX(-50%) translateY(0)";
+      });
+
+      setTimeout(() => {
+        toast.style.opacity = "0";
+        toast.style.transform = "translateX(-50%) translateY(10px)";
+        setTimeout(() => toast.remove(), 300);
+      }, 3200);
+    }
+
+    /* ==========================================================================
+       AMBIENT CINEMATIC AUDIO (Web Audio API Synthesizer)
+       Warm gentle golden chime drone, completely self-contained.
+       ========================================================================== */
+    let audioCtx = null;
+    let isAudioPlaying = false;
+    let masterGain = null;
+    let droneOsc1 = null;
+    let droneOsc2 = null;
+
+    function toggleAmbienceAudio() {
+      if (!isAudioPlaying) {
+        startAmbienceAudio();
+      } else {
+        stopAmbienceAudio();
+      }
+    }
+
+    function startAmbienceAudio() {
+      try {
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        if (!AudioContextClass) return;
+
+        if (!audioCtx) {
+          audioCtx = new AudioContextClass();
+        }
+        if (audioCtx.state === "suspended") {
+          audioCtx.resume();
+        }
+
+        masterGain = audioCtx.createGain();
+        masterGain.gain.setValueAtTime(0.001, audioCtx.currentTime);
+        masterGain.gain.exponentialRampToValueAtTime(0.06, audioCtx.currentTime + 3);
+        masterGain.connect(audioCtx.destination);
+
+        // Low warm ambient drone (F# major root chord warmth)
+        droneOsc1 = audioCtx.createOscillator();
+        droneOsc1.type = "sine";
+        droneOsc1.frequency.setValueAtTime(92.5, audioCtx.currentTime); // F#2
+        droneOsc1.connect(masterGain);
+        droneOsc1.start();
+
+        droneOsc2 = audioCtx.createOscillator();
+        droneOsc2.type = "sine";
+        droneOsc2.frequency.setValueAtTime(138.59, audioCtx.currentTime); // C#3 fifth
+        droneOsc2.connect(masterGain);
+        droneOsc2.start();
+
+        isAudioPlaying = true;
+        updateAudioButtonUI();
+      } catch (e) {
+        // Audio autoplay prevented by browser policy
+      }
+    }
+
+    function stopAmbienceAudio() {
+      if (masterGain && audioCtx) {
+        masterGain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 1.2);
+        setTimeout(() => {
+          if (droneOsc1) { droneOsc1.stop(); droneOsc1.disconnect(); droneOsc1 = null; }
+          if (droneOsc2) { droneOsc2.stop(); droneOsc2.disconnect(); droneOsc2 = null; }
+        }, 1300);
+      }
+      isAudioPlaying = false;
+      updateAudioButtonUI();
+    }
+
+    function updateAudioButtonUI() {
+      const icon = document.getElementById("audio-icon");
+      const btn = document.getElementById("audio-toggle-btn");
+      if (!icon || !btn) return;
+
+      if (isAudioPlaying) {
+        icon.setAttribute("data-lucide", "volume-2");
+        btn.style.color = "var(--color-gold)";
+        btn.style.borderColor = "var(--color-gold-border)";
+      } else {
+        icon.setAttribute("data-lucide", "volume-x");
+        btn.style.color = "var(--color-ivory-muted)";
+        btn.style.borderColor = "rgba(253, 251, 247, 0.12)";
+      }
+      if (window.lucide) lucide.createIcons();
+    }
+
+    /* ==========================================================================
+       CANVAS AMBIENT STARDUST PARTICLES (Golden dust floating)
+       ========================================================================== */
+    const canvas = document.getElementById("ambient-canvas");
+    const ctx = canvas.getContext("2d");
+    let particles = [];
+    const particleCount = 42;
+    let animFrameId = null;
+
+    function resizeCanvas() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+
+    class StardustParticle {
+      constructor() {
+        this.reset(true);
+      }
+
+      reset(init = false) {
+        this.x = Math.random() * canvas.width;
+        this.y = init ? Math.random() * canvas.height : canvas.height + 10;
+        this.size = Math.random() * 1.8 + 0.6;
+        this.speedY = -(Math.random() * 0.35 + 0.15);
+        this.speedX = (Math.random() - 0.5) * 0.2;
+        this.opacity = Math.random() * 0.5 + 0.2;
+        this.pulseSpeed = Math.random() * 0.02 + 0.01;
+        this.pulseVal = Math.random() * Math.PI;
+      }
+
+      update() {
+        this.y += this.speedY;
+        this.x += this.speedX;
+        this.pulseVal += this.pulseSpeed;
+
+        if (this.y < -10 || this.x < -10 || this.x > canvas.width + 10) {
+          this.reset(false);
+        }
+      }
+
+      draw() {
+        const currentOpacity = this.opacity * (0.6 + Math.sin(this.pulseVal) * 0.4);
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(229, 195, 120, ${currentOpacity})`;
+        ctx.shadowBlur = 8;
+        ctx.shadowColor = "rgba(229, 195, 120, 0.4)";
+        ctx.fill();
+        ctx.shadowBlur = 0;
+      }
+    }
+
+    function initParticles() {
+      resizeCanvas();
+      particles = [];
+      for (let i = 0; i < particleCount; i++) {
+        particles.push(new StardustParticle());
+      }
+    }
+
+    function animateParticles() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      for (let i = 0; i < particles.length; i++) {
+        particles[i].update();
+        particles[i].draw();
+      }
+      animFrameId = requestAnimationFrame(animateParticles);
+    }
+
+    window.addEventListener("resize", () => {
+      resizeCanvas();
+    });
+
+    // Pause canvas if tab is hidden to save energy
+    document.addEventListener("visibilitychange", () => {
+      if (document.hidden) {
+        if (animFrameId) cancelAnimationFrame(animFrameId);
+      } else {
+        animateParticles();
+      }
+    });
+
+    /* ==========================================================================
+       CLASSIFIED INVESTIGATION CONTROLLER & AUDIO
+       ========================================================================== */
+    let investigationAudioCtx = null;
+    let investigationAbortCtrl = false;
+
+    function getInvestigationAudio() {
+      if (!investigationAudioCtx) {
+        const AudioClass = window.AudioContext || window.webkitAudioContext;
+        if (AudioClass) investigationAudioCtx = new AudioClass();
+      }
+      if (investigationAudioCtx && investigationAudioCtx.state === "suspended") {
+        investigationAudioCtx.resume();
+      }
+      return investigationAudioCtx;
+    }
+
+    function playTypewriterKeySound() {
+      try {
+        const ctx = getInvestigationAudio();
+        if (!ctx) return;
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = "square";
+        osc.frequency.setValueAtTime(400 + Math.random() * 200, ctx.currentTime);
+        gain.gain.setValueAtTime(0.015, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.04);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.05);
+      } catch (e) {}
+    }
+
+    function playDramaticBoom() {
+      try {
+        const ctx = getInvestigationAudio();
+        if (!ctx) return;
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(90, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(32, ctx.currentTime + 1.2);
+        gain.gain.setValueAtTime(0.2, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 1.4);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + 1.5);
+      } catch (e) {}
+    }
+
+    function playSuspenseDrone() {
+      try {
+        const ctx = getInvestigationAudio();
+        if (!ctx) return;
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = "triangle";
+        osc.frequency.setValueAtTime(55, ctx.currentTime); // Low A1
+        gain.gain.setValueAtTime(0.04, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 4);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + 4.2);
+      } catch (e) {}
+    }
+
+    function typeTextAsync(el, text, speed = 40) {
+      return new Promise((resolve) => {
+        el.innerHTML = '<span class="cursor-blink"></span>';
+        el.classList.add("visible");
+        let idx = 0;
+        const interval = setInterval(() => {
+          if (investigationAbortCtrl) {
+            clearInterval(interval);
+            resolve();
+            return;
+          }
+          if (idx < text.length) {
+            const char = text[idx];
+            el.innerHTML = text.substring(0, idx + 1) + '<span class="cursor-blink"></span>';
+            if (char !== " ") playTypewriterKeySound();
+            idx++;
+          } else {
+            clearInterval(interval);
+            el.innerHTML = text; // remove blinking cursor on line complete
+            resolve();
+          }
+        }, speed);
+      });
+    }
+
+    function delay(ms) {
+      return new Promise((resolve) => setTimeout(resolve, ms));
+    }
+
+    async function runInvestigationSequence() {
+      investigationAbortCtrl = false;
+      const overlay = document.getElementById("classified-overlay");
+      const container = document.getElementById("classified-container");
+      const line1 = document.getElementById("tw-line-1");
+      const line2 = document.getElementById("tw-line-2");
+      const line3 = document.getElementById("tw-line-3");
+      const evidenceCard = document.getElementById("evidence-folder-card");
+      const captionBox = document.getElementById("evidence-caption-box");
+      const actions = document.getElementById("investigation-actions");
+
+      // Reset states
+      line1.innerHTML = ""; line1.classList.remove("visible");
+      line2.innerHTML = ""; line2.classList.remove("visible");
+      line3.innerHTML = ""; line3.classList.remove("visible");
+      evidenceCard.classList.remove("revealed");
+      captionBox.classList.remove("revealed");
+      actions.style.opacity = "0";
+
+      // Show overlay with fade and screen glitch
+      overlay.classList.add("active");
+      container.classList.add("glitching");
+      playSuspenseDrone();
+      setTimeout(() => container.classList.remove("glitching"), 750);
+
+      await delay(900);
+      if (investigationAbortCtrl) return;
+
+      // Line 1: «Маша, я долго не хотел портить тебе праздник…»
+      await typeTextAsync(line1, "«Маша, я долго не хотел портить тебе праздник…", 42);
+      await delay(1300);
+      if (investigationAbortCtrl) return;
+
+      // Line 2: «Но, кажется, пришло время сказать правду.»
+      await typeTextAsync(line2, "Но, кажется, пришло время сказать правду.", 45);
+      await delay(1500);
+      if (investigationAbortCtrl) return;
+
+      // Line 3 (Shocking climax): «Мне кажется, твой парень тебе изменяет.»
+      playDramaticBoom();
+      await typeTextAsync(line3, "Мне кажется, твой парень тебе изменяет.»", 50);
+
+      // Dramatic pause before revealing the photo
+      await delay(2200);
+      if (investigationAbortCtrl) return;
+
+      // Reveal Evidence Folder Card
+      playDramaticBoom();
+      evidenceCard.classList.add("revealed");
+      evidenceCard.scrollIntoView({ behavior: "smooth", block: "center" });
+
+      await delay(1200);
+      if (investigationAbortCtrl) return;
+
+      // Reveal Gradual Caption
+      captionBox.classList.add("revealed");
+
+      await delay(800);
+      if (investigationAbortCtrl) return;
+
+      // Reveal Action Buttons
+      actions.style.opacity = "1";
+      if (window.lucide) lucide.createIcons();
+    }
+
+    function initiateClassifiedInvestigation() {
+      runInvestigationSequence();
+    }
+
+    function closeClassifiedInvestigation() {
+      investigationAbortCtrl = true;
+      const overlay = document.getElementById("classified-overlay");
+      if (overlay) overlay.classList.remove("active");
+    }
+
+    function restartInvestigation() {
+      runInvestigationSequence();
+    }
+
+    // Photo Fallback & Upload Handler
+    let photoRetryCount = 0;
+    const photoFallbacks = [
+      "photos/06.jpg",
+      "photos/secret.jpg",
+      "photos/photo_2026-10-13_00-18-26.jpg",
+      "photo_2026-10-13_00-18-26.jpg"
+    ];
+
+    function handleEvidencePhotoError(img) {
+      photoRetryCount++;
+      if (photoRetryCount < photoFallbacks.length) {
+        img.src = photoFallbacks[photoRetryCount];
+      } else {
+        const saved = localStorage.getItem("masha_evidence_photo");
+        if (saved) {
+          img.src = saved;
+        }
+      }
+    }
+
+    function handleEvidenceFileUpload(event) {
+      const file = event.target.files && event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const dataUrl = e.target.result;
+        const img = document.getElementById("evidence-photo");
+        if (img) img.src = dataUrl;
+        try {
+          localStorage.setItem("masha_evidence_photo", dataUrl);
+          const label = document.getElementById("evidence-upload-label");
+          if (label) label.textContent = "Фото загружено и сохранено ✓";
+        } catch (err) {}
+      };
+      reader.readAsDataURL(file);
+    }
+
+    // Initialize on load
+    window.addEventListener("DOMContentLoaded", () => {
+      // Check for ?edit=1 test mode
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get("edit") === "1") {
+        document.body.classList.add("edit-mode");
+      }
+
+      // Check for cached evidence photo in edit/preview testing
+      const cachedPhoto = localStorage.getItem("masha_evidence_photo");
+      if (cachedPhoto) {
+        const img = document.getElementById("evidence-photo");
+        if (img) img.src = cachedPhoto;
+      }
+
+      if (window.lucide) {
+        lucide.createIcons();
+      }
+      initParticles();
+      animateParticles();
+      checkScene3Availability();
+      updateSceneUI();
+    });
+  </script>
+</body>
+</html>
