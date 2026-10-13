@@ -2179,7 +2179,7 @@
           </h1>
           <div class="intro-decor-line" aria-hidden="true"></div>
           <p class="lead-text">
-            Немного фоток, общих воспоминаний и пара сюрпризов. В общем, Маша, это всё для тебя — так что листай дальше.
+            Немного фоток и пара сюрпризов. В общем, Маша, это всё для тебя — так что листай дальше.
           </p>
 
           <button class="btn-cinematic" onclick="goToScene(1)" aria-label="Начать просмотр">
@@ -2331,78 +2331,14 @@
             </div>
           </div>
 
-          <button class="btn-cinematic" id="btn-scene-2-next" onclick="proceedFromScene2()" aria-label="Перейти дальше">
-            <span id="btn-scene-2-next-text">Дальше к киноплёнке</span>
+          <button class="btn-cinematic" id="btn-scene-2-next" onclick="goToScene(3)" aria-label="Перейти дальше">
+            <span id="btn-scene-2-next-text">К финальным пожеланиям</span>
             <i data-lucide="arrow-right"></i>
           </button>
         </div>
       </section>
 
-      <!-- SCENE 4: SLIDESHOW FILM (Киноплёнка) -->
-      <section class="scene" id="scene-3" aria-label="Глава III: Киноплёнка">
-        <div class="scene-content">
-          <span class="chapter-eyebrow">Глава III · Киноплёнка</span>
-          <h2 class="display-title">
-            Движение, свет <br />
-            <span class="display-title-gold">и тёплые кадры</span>
-          </h2>
-          <p class="lead-text">
-            Кинематографичная лента памятных моментов — живая хроника к твоему 19-летию.
-          </p>
-
-          <!-- Slideshow Frame -->
-          <div class="editorial-card-container" style="padding: 16px;">
-            <div class="cinema-player-frame" id="slideshow-player-frame">
-              <!-- Vintage film perforations top -->
-              <div class="film-perforations-top">
-                <div class="hole"></div><div class="hole"></div><div class="hole"></div>
-                <div class="hole"></div><div class="hole"></div><div class="hole"></div>
-                <div class="hole"></div><div class="hole"></div><div class="hole"></div>
-              </div>
-
-              <!-- Slideshow Slide Image Container -->
-              <div class="slideshow-slide-wrap" id="slideshow-slide-wrap">
-                <img id="slideshow-slide-img" class="slideshow-slide-img" src="photos/01.jpg" alt="Кадр киноплёнки" onerror="handleSlideImgError(this)" onload="handleSlideImgLoaded(this)" />
-                <div class="slideshow-vignette"></div>
-              </div>
-
-              <!-- Slideshow Caption & Controls Overlay -->
-              <div class="slideshow-info-bar">
-                <div class="slideshow-meta">
-                  <span class="slideshow-counter" id="slideshow-counter">01 / 09</span>
-                  <span class="slideshow-title" id="slideshow-title">Серьёзные лица</span>
-                </div>
-                <div class="slideshow-controls">
-                  <button class="slideshow-ctrl-btn" onclick="slideshowPrevPhoto()" aria-label="Предыдущий кадр">
-                    <i data-lucide="chevron-left"></i>
-                  </button>
-                  <button class="slideshow-ctrl-btn slideshow-play-btn" id="slideshow-play-btn" onclick="toggleSlideshowPlay()" aria-label="Воспроизведение / Пауза">
-                    <i data-lucide="pause" id="slideshow-play-icon"></i>
-                  </button>
-                  <button class="slideshow-ctrl-btn" onclick="slideshowNextPhoto()" aria-label="Следующий кадр">
-                    <i data-lucide="chevron-right"></i>
-                  </button>
-                </div>
-              </div>
-
-              <!-- Vintage film perforations bottom -->
-              <div class="film-perforations-bottom">
-                <div class="hole"></div><div class="hole"></div><div class="hole"></div>
-                <div class="hole"></div><div class="hole"></div><div class="hole"></div>
-                <div class="hole"></div><div class="hole"></div><div class="hole"></div>
-              </div>
-            </div>
-          </div>
-
-          <button class="btn-cinematic" onclick="goToScene(4)" aria-label="Перейти к пожеланиям">
-            <span>К финальным пожеланиям</span>
-            <i data-lucide="arrow-right"></i>
-          </button>
-        </div>
-      </section>
-
-      <!-- SCENE 5: FINAL WISHES (Эпилог & Подарок) -->
-      <section class="scene" id="scene-4" aria-label="Эпилог: Пожелания">
+      <section class="scene" id="scene-3" aria-label="Эпилог: Пожелания">
         <div class="scene-content">
           <span class="chapter-eyebrow">Эпилог · Тёплые Слова</span>
           <h2 class="display-title">
@@ -2522,11 +2458,7 @@
           <i data-lucide="chevron-right"></i>
         </button>
         <button class="chapter-row-btn" data-chapter="3" onclick="goToScene(3); closeChaptersModal();">
-          <span>04. Глава III — Киноплёнка 19</span>
-          <i data-lucide="chevron-right"></i>
-        </button>
-        <button class="chapter-row-btn" data-chapter="4" onclick="goToScene(4); closeChaptersModal();">
-          <span>05. Эпилог — Тёплые слова & Подарок</span>
+          <span>04. Эпилог — Тёплые слова & Подарок</span>
           <i data-lucide="chevron-right"></i>
         </button>
       </div>
@@ -2740,11 +2672,10 @@
        SCENE CONTROLLER & NAVIGATION
        ========================================================================== */
     const scenes = [
-      { id: "scene-0", title: "Пролог", number: "01 / 05" },
-      { id: "scene-1", title: "19 лет", number: "02 / 05" },
-      { id: "scene-2", title: "Воспоминания", number: "03 / 05" },
-      { id: "scene-3", title: "Киноплёнка", number: "04 / 05" },
-      { id: "scene-4", title: "Пожелания", number: "05 / 05" }
+      { id: "scene-0", title: "Пролог", number: "01 / 04" },
+      { id: "scene-1", title: "19 лет", number: "02 / 04" },
+      { id: "scene-2", title: "Фотографии", number: "03 / 04" },
+      { id: "scene-3", title: "Пожелания", number: "04 / 04" }
     ];
 
     let currentSceneIndex = 0;
@@ -2909,7 +2840,7 @@
         if (scene3El) scene3El.classList.remove("scene-hidden");
         if (chapterBtn3) chapterBtn3.style.display = "";
         if (dot3) dot3.style.display = "";
-        if (btnNext2Text) btnNext2Text.textContent = "Дальше к киноплёнке";
+        if (btnNext2Text) btnNext2Text.textContent = "К финальным пожеланиям";
       }
       refreshSceneLabels();
     }
@@ -2924,18 +2855,12 @@
 
     function goToScene(index) {
       if (index < 0 || index >= totalScenes) return;
-      if (isScene3Hidden && index === 3) {
-        index = 4;
-      }
       currentSceneIndex = index;
       updateSceneUI();
 
       // Trigger scene specific effects
       if (currentSceneIndex === 1) {
         setTimeout(() => triggerChampagneConfetti(0.4), 300);
-      } else if (currentSceneIndex === 3) {
-        renderSlide(currentSlideIndex);
-        startSlideshowTimer();
       } else {
         stopSlideshowTimer();
       }
@@ -2943,9 +2868,6 @@
 
     function nextScene() {
       let target = currentSceneIndex + 1;
-      if (isScene3Hidden && target === 3) {
-        target = 4;
-      }
       if (target < totalScenes) {
         goToScene(target);
       } else {
@@ -2955,9 +2877,6 @@
 
     function prevScene() {
       let target = currentSceneIndex - 1;
-      if (isScene3Hidden && target === 3) {
-        target = 2;
-      }
       if (target >= 0) {
         goToScene(target);
       }
@@ -3866,19 +3785,19 @@
       await delay(900);
       if (runId !== investigationRunId) return;
 
-      // Line 1: «Маша, тут всплыло одно подозрительное дело…»
-      await typeTextAsync(line1, "«Маша, тут всплыло одно подозрительное дело…", 42);
+      // Line 1: «Маша, я долго не хотел портить тебе праздник…»
+      await typeTextAsync(line1, "«Маша, я долго не хотел портить тебе праздник…", 42);
       await delay(1300);
       if (runId !== investigationRunId) return;
 
-      // Line 2: «И я больше не могу держать это в секрете.»
-      await typeTextAsync(line2, "И я больше не могу держать это в секрете.", 45);
+      // Line 2: «Но, кажется, пришло время сказать правду.»
+      await typeTextAsync(line2, "Но, кажется, пришло время сказать правду.", 45);
       await delay(1500);
       if (runId !== investigationRunId) return;
 
-      // Line 3 (Shocking climax): «Лёша снова попал в объектив. И это, как видишь, уже улика.»
+      // Line 3 (Shocking climax): «Мне кажется, твой парень тебе изменяет.»
       playDramaticBoom();
-      await typeTextAsync(line3, "Лёша снова попал в объектив. И это, как видишь, уже улика.»", 50);
+      await typeTextAsync(line3, "Мне кажется, твой парень тебе изменяет.»", 50);
 
       // Dramatic pause before revealing the photo
       await delay(2200);
